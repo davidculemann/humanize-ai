@@ -16,9 +16,7 @@ const Index = () => {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">H</span>
-                </div>
+                <img src="/logo.svg" alt="HumanizeAI Logo" className="h-8 w-auto" />
                 <span className="text-xl font-semibold text-slate-800">HumanizeAI</span>
               </div>
               <div className="hidden sm:flex items-center gap-6 text-sm text-slate-600">
