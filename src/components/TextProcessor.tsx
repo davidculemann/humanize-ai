@@ -1,24 +1,39 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Copy, Sparkles, Minus, Shuffle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Copy, Sparkles, Minus, Shuffle, FileText, User, MessageSquare, Briefcase } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
   humanizeText, 
   removeEmDashes, 
   addTypos, 
-  rewriteWithAI 
+  rewriteWithAI,
+  applyTransformations,
+  getHumanizationPrompts,
+  type UseCase 
 } from '@/utils/textProcessing';
 
 const TextProcessor = () => {
   const [inputText, setInputText] = useState('');
   const [outputText, setOutputText] = useState('');
+  const [useCase, setUseCase] = useState<UseCase>('professional');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [appliedTransformations, setAppliedTransformations] = useState({
+    removeEmDashes: false,
+    addTypos: false,
+  });
   const { toast } = useToast();
+
+  const useCaseIcons = {
+    academic: FileText,
+    professional: Briefcase,
+    casual: User,
+    social: MessageSquare,
+  };
 
   const handleCopy = async (text: string) => {
     try {
@@ -36,13 +51,30 @@ const TextProcessor = () => {
     }
   };
 
+  const handleTransformation = (type: 'removeEmDashes' | 'addTypos') => {
+    if (!inputText.trim()) return;
+    
+    const newTransformations = {
+      ...appliedTransformations,
+      [type]: true,
+    };
+    
+    const result = applyTransformations(inputText, newTransformations);
+    setOutputText(result);
+    setAppliedTransformations(newTransformations);
+  };
+
   const handleHumanize = async () => {
     if (!inputText.trim()) return;
     
     setIsProcessing(true);
     try {
-      const humanized = await humanizeText(inputText);
-      setOutputText(humanized);
+      let result = await humanizeText(inputText, useCase);
+      
+      // Apply any existing transformations
+      result = applyTransformations(result, appliedTransformations);
+      
+      setOutputText(result);
     } catch (error) {
       toast({
         title: "Error",
@@ -54,25 +86,17 @@ const TextProcessor = () => {
     }
   };
 
-  const handleRemoveEmDashes = () => {
-    if (!inputText.trim()) return;
-    const cleaned = removeEmDashes(inputText);
-    setOutputText(cleaned);
-  };
-
-  const handleAddTypos = () => {
-    if (!inputText.trim()) return;
-    const withTypos = addTypos(inputText);
-    setOutputText(withTypos);
-  };
-
   const handleAIRewrite = async () => {
     if (!inputText.trim()) return;
     
     setIsProcessing(true);
     try {
-      const rewritten = await rewriteWithAI(inputText);
-      setOutputText(rewritten);
+      let result = await rewriteWithAI(inputText, useCase);
+      
+      // Apply any existing transformations
+      result = applyTransformations(result, appliedTransformations);
+      
+      setOutputText(result);
     } catch (error) {
       toast({
         title: "Error",
@@ -84,31 +108,72 @@ const TextProcessor = () => {
     }
   };
 
+  const resetTransformations = () => {
+    setAppliedTransformations({
+      removeEmDashes: false,
+      addTypos: false,
+    });
+    setOutputText('');
+  };
+
+  const currentPrompt = getHumanizationPrompts(useCase);
+  const UseCaseIcon = useCaseIcons[useCase];
+
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-7xl mx-auto space-y-8">
+      {/* Use Case Selection */}
+      <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+            <UseCaseIcon className="w-5 h-5" />
+            Content Type
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Select value={useCase} onValueChange={(value: UseCase) => setUseCase(value)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="academic">📚 Academic Paper</SelectItem>
+              <SelectItem value="professional">💼 Professional/CV</SelectItem>
+              <SelectItem value="casual">✍️ Blog/Article</SelectItem>
+              <SelectItem value="social">📱 Social Media</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-sm text-slate-500 mt-2">
+            {currentPrompt.name} - Optimized for this content type
+          </p>
+        </CardContent>
+      </Card>
+
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Input Section */}
-        <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold text-slate-700">Input Text</h2>
+        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl font-semibold text-slate-800">Original Text</CardTitle>
               <Badge variant="outline" className="text-slate-500">
                 {inputText.length} chars
               </Badge>
             </div>
-            
+          </CardHeader>
+          <CardContent className="space-y-6">
             <Textarea
-              placeholder="Paste your AI-generated text here..."
+              placeholder="Paste your AI-generated text here to make it sound more human..."
               value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              className="min-h-[400px] resize-none border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-700 leading-relaxed"
+              onChange={(e) => {
+                setInputText(e.target.value);
+                resetTransformations();
+              }}
+              className="min-h-[300px] resize-none border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-700 leading-relaxed"
             />
             
-            <div className="flex flex-wrap gap-3 mt-6">
+            <div className="grid grid-cols-2 gap-3">
               <Button
                 onClick={handleAIRewrite}
                 disabled={!inputText.trim() || isProcessing}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
               >
                 <Sparkles className="w-4 h-4 mr-2" />
                 AI Rewrite
@@ -118,27 +183,27 @@ const TextProcessor = () => {
                 onClick={handleHumanize}
                 disabled={!inputText.trim() || isProcessing}
                 variant="outline"
-                className="border-slate-300 hover:bg-slate-50 transition-all duration-200"
+                className="border-blue-200 hover:bg-blue-50"
               >
                 <Shuffle className="w-4 h-4 mr-2" />
                 Humanize
               </Button>
               
               <Button
-                onClick={handleRemoveEmDashes}
+                onClick={() => handleTransformation('removeEmDashes')}
                 disabled={!inputText.trim()}
                 variant="outline"
-                className="border-slate-300 hover:bg-slate-50 transition-all duration-200"
+                className={appliedTransformations.removeEmDashes ? "bg-green-50 border-green-200" : ""}
               >
                 <Minus className="w-4 h-4 mr-2" />
-                Remove Em Dashes
+                Remove Dashes
               </Button>
               
               <Button
-                onClick={handleAddTypos}
+                onClick={() => handleTransformation('addTypos')}
                 disabled={!inputText.trim()}
                 variant="outline"
-                className="border-slate-300 hover:bg-slate-50 transition-all duration-200"
+                className={appliedTransformations.addTypos ? "bg-green-50 border-green-200" : ""}
               >
                 Add Typos
               </Button>
@@ -147,10 +212,10 @@ const TextProcessor = () => {
         </Card>
 
         {/* Output Section */}
-        <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold text-slate-700">Humanized Text</h2>
+        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl font-semibold text-slate-800">Humanized Text</CardTitle>
               <div className="flex items-center gap-3">
                 <Badge variant="outline" className="text-slate-500">
                   {outputText.length} chars
@@ -160,36 +225,40 @@ const TextProcessor = () => {
                     onClick={() => handleCopy(outputText)}
                     size="sm"
                     variant="ghost"
-                    className="hover:bg-slate-100 transition-all duration-200"
+                    className="hover:bg-slate-100"
                   >
                     <Copy className="w-4 h-4" />
                   </Button>
                 )}
               </div>
             </div>
-            
-            <div className="min-h-[400px] p-4 bg-slate-50/50 rounded-lg border border-slate-200">
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="min-h-[300px] p-4 bg-gradient-to-br from-slate-50 to-blue-50/30 rounded-lg border border-slate-200">
               {outputText ? (
                 <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
                   {outputText}
                 </p>
               ) : (
-                <p className="text-slate-400 italic text-center mt-32">
-                  Your humanized text will appear here...
-                </p>
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-4">
+                    <Sparkles className="w-8 h-8 text-blue-500" />
+                  </div>
+                  <p className="text-slate-400 text-sm">
+                    Your humanized text will appear here...
+                  </p>
+                </div>
               )}
             </div>
 
             {outputText && (
-              <div className="mt-4 pt-4 border-t border-slate-200">
-                <Button
-                  onClick={() => handleCopy(outputText)}
-                  className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy to Clipboard
-                </Button>
-              </div>
+              <Button
+                onClick={() => handleCopy(outputText)}
+                className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Copy Humanized Text
+              </Button>
             )}
           </CardContent>
         </Card>
@@ -197,10 +266,10 @@ const TextProcessor = () => {
 
       {isProcessing && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
-          <Card className="p-6 bg-white shadow-xl">
-            <div className="flex items-center gap-3">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-              <p className="text-slate-700">Processing your text...</p>
+          <Card className="p-8 bg-white shadow-2xl">
+            <div className="flex items-center gap-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <p className="text-slate-700 font-medium">Processing your text...</p>
             </div>
           </Card>
         </div>
