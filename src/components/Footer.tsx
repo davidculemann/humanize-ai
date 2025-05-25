@@ -26,7 +26,7 @@ const Footer = () => {
           </div>
           
           <p className="text-xs text-slate-400 text-center">
-            © 2024 David Culemann. Transform AI text into natural, human-sounding content.
+            © 2025 David Culemann. Transform AI text into natural, human-sounding content.
           </p>
         </div>
       </div>

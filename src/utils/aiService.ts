@@ -131,7 +131,9 @@ export class AIService {
 5. Adding subtle imperfections that humans naturally have
 6. Maintaining the original meaning and key information
 
-Return ONLY the humanized version of the text, without any additional commentary or introductory phrases.`;
+Return ONLY the processed text. Do not include any additional commentary, introductory phrases, or markdown formatting (e.g., do not wrap code in backticks or \`\`\`jsx ... \`\`\` blocks).
+
+IMPORTANT: Your entire response must consist *only* of the resulting processed text. Absolutely no explanatory preambles, introductory/closing remarks, or markdown code block syntax (like \`\`\`jsx or \`\`\`). Just the raw text.`;
 
     const useCasePrompts = {
       academic: 'Write in an academic style suitable for research papers and scholarly work, but make it sound like it was written by a human researcher rather than AI.',
@@ -154,7 +156,9 @@ Return ONLY the humanized version of the text, without any additional commentary
 4. Making it sound natural and human-written
 5. Adapting the tone for the specified use case
 
-Return ONLY the rewritten version of the text, without any additional commentary or introductory phrases.`;
+Return ONLY the rewritten text. Do not include any additional commentary, introductory phrases, or markdown formatting (e.g., do not wrap code in backticks or \`\`\`jsx ... \`\`\` blocks).
+
+IMPORTANT: Your entire response must consist *only* of the resulting rewritten text/code. Absolutely no explanatory preambles, introductory/closing remarks, or markdown code block syntax (like \`\`\`jsx or \`\`\`). Just the raw text/code.`;
 
     const useCasePrompts = {
       academic: 'Rewrite in an academic style with proper scholarly language and structure.',

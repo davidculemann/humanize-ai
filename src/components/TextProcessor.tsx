@@ -1,3 +1,5 @@
+"use client"
+
 import ContentTypeSelector from '@/components/ContentTypeSelector';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +13,7 @@ import {
   rewriteWithAI,
   type UseCase
 } from '@/utils/textProcessing';
-import { Copy, Minus, Plus, Shuffle, Sparkles } from 'lucide-react';
+import { Copy, Minus, Plus, Shuffle, Sparkles, Wand2 } from 'lucide-react';
 import { useState } from 'react';
 
 const TextProcessor = () => {
@@ -110,7 +112,6 @@ const TextProcessor = () => {
       removeEmDashes: false,
       addTypos: { level: 0 },
     });
-    setOutputText('');
   };
 
   const handleUseCaseChange = (newUseCase: UseCase, newCustomPrompt?: string) => {
@@ -119,155 +120,182 @@ const TextProcessor = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Input Section */}
-        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl font-semibold text-slate-800">Original Text</CardTitle>
-              <div className="flex items-center gap-2">
-                <ContentTypeSelector
-                  useCase={useCase}
-                  customPrompt={customPrompt}
-                  onUseCaseChange={handleUseCaseChange}
-                  isMobile={isMobile}
-                />
-                <Badge variant="outline" className="text-slate-500">
-                  {inputText.length} chars
-                </Badge>
+    <div className="max-w-6xl mx-auto">
+      <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-blue-50/50 border-b border-slate-200/60">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <CardTitle className="text-2xl font-semibold text-slate-800 flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <Wand2 className="w-4 h-4 text-white" />
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <Textarea
-              placeholder="Paste your AI-generated text here to make it sound more human..."
-              value={inputText}
-              onChange={(e) => {
-                setInputText(e.target.value);
-                resetTransformations();
-              }}
-              className="min-h-[300px] resize-none border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-700 leading-relaxed"
+              Text Humanizer
+            </CardTitle>
+            <ContentTypeSelector
+              useCase={useCase}
+              customPrompt={customPrompt}
+              onUseCaseChange={handleUseCaseChange}
+              isMobile={isMobile}
             />
-            
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                onClick={handleAIRewrite}
-                disabled={!inputText.trim() || isProcessing}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                AI Rewrite
-              </Button>
-              
-              <Button
-                onClick={handleHumanize}
-                disabled={!inputText.trim() || isProcessing}
-                variant="outline"
-                className="border-blue-200 hover:bg-blue-50"
-              >
-                <Shuffle className="w-4 h-4 mr-2" />
-                Humanize
-              </Button>
-              
-              <Button
-                onClick={() => handleTransformation('removeEmDashes')}
-                disabled={!inputText.trim()}
-                variant="outline"
-                className={appliedTransformations.removeEmDashes ? "bg-green-50 border-green-200" : ""}
-              >
-                <Minus className="w-4 h-4 mr-2" />
-                Remove Dashes
-              </Button>
-              
-              <div className="col-span-1 flex items-center justify-between h-10 px-2 rounded-md border border-slate-200">
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-6 md:p-8">
+          <div className="grid lg:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-slate-800">Original Text</h3>
+                <Badge variant="secondary" className="bg-slate-100 text-slate-600">
+                  {inputText.length} characters
+                </Badge>
+              </div>
+
+              <Textarea
+                placeholder="Paste your AI-generated text here..."
+                value={inputText}
+                onChange={(e) => {
+                  setInputText(e.target.value);
+                  setOutputText("");
+                  setAppliedTransformations({ removeEmDashes: false, addTypos: { level: 0 } });
+                }}
+                className="min-h-[320px] resize-none border-slate-300 focus:border-blue-500 focus:ring-blue-500/30 text-slate-800 leading-relaxed text-base shadow-sm"
+              />
+
+              <div className="grid grid-cols-2 gap-3">
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  className="!h-8 !w-8 text-slate-600 hover:bg-slate-100"
-                  onClick={() => handleTransformation('addTypos', Math.max(0, appliedTransformations.addTypos.level - 1))}
-                  disabled={!inputText.trim() || appliedTransformations.addTypos.level === 0}
-                  aria-label="Decrease typos"
+                  onClick={handleAIRewrite}
+                  disabled={!inputText.trim() || isProcessing}
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/25 transition-all duration-150 ease-in-out hover:scale-[1.02] active:scale-[0.98]"
+                  size="lg"
                 >
-                  <Minus className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  AI Rewrite
                 </Button>
-                <span className="text-sm font-medium text-slate-700 select-none">
-                  {appliedTransformations.addTypos.level} Typos
-                </span>
+
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  className="!h-8 !w-8 text-slate-600 hover:bg-slate-100"
-                  onClick={() => handleTransformation('addTypos', Math.min(5, appliedTransformations.addTypos.level + 1))}
-                  disabled={!inputText.trim() || appliedTransformations.addTypos.level === 5}
-                  aria-label="Increase typos"
+                  onClick={handleHumanize}
+                  disabled={!inputText.trim() || isProcessing}
+                  variant="outline"
+                  className="border-blue-300 hover:bg-blue-50 hover:border-blue-400 text-blue-600 shadow-sm transition-all duration-150 ease-in-out hover:scale-[1.02] active:scale-[0.98]"
+                  size="lg"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Shuffle className="w-4 h-4 mr-2" />
+                  Humanize
                 </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Output Section */}
-        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl font-semibold text-slate-800">Humanized Text</CardTitle>
-              <div className="flex items-center gap-3">
-                <Badge variant="outline" className="text-slate-500">
-                  {outputText.length} chars
-                </Badge>
-                {outputText && (
-                  <Button
-                    onClick={() => handleCopy(outputText)}
-                    size="sm"
-                    variant="ghost"
-                    className="hover:bg-slate-100"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-slate-800">Humanized Text</h3>
+                <div className="flex items-center gap-3">
+                  <Badge variant="secondary" className="bg-green-100 text-green-700">
+                    {outputText.length} characters
+                  </Badge>
+                  {outputText && (
+                    <Button
+                      onClick={() => handleCopy(outputText)}
+                      size="icon"
+                      variant="ghost"
+                      className="text-slate-500 hover:bg-slate-100 hover:text-slate-700 w-8 h-8"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div className="min-h-[320px] p-6 bg-gradient-to-br from-green-50/30 to-blue-50/20 rounded-xl border border-slate-200/80 overflow-y-auto shadow-inner inset-shadow-light">
+                {outputText ? (
+                  <p className="text-slate-800 leading-relaxed whitespace-pre-wrap text-base">{outputText}</p>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center opacity-75">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center mb-4 shadow-md">
+                      <Sparkles className="w-8 h-8 text-blue-500" />
+                    </div>
+                    <p className="text-slate-500 text-base font-medium mb-2">Ready to humanize</p>
+                    <p className="text-slate-400 text-sm">Your transformed text will appear here</p>
+                  </div>
                 )}
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="min-h-[300px] p-4 bg-gradient-to-br from-slate-50 to-blue-50/30 rounded-lg border border-slate-200 flex">
-              {outputText ? (
-                <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
-                  {outputText}
-                </p>
-              ) : (
-                <div className="flex flex-col items-center justify-center flex-1">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-4">
-                    <Sparkles className="w-8 h-8 text-blue-500" />
-                  </div>
-                  <p className="text-slate-400 text-sm">
-                    Your humanized text will appear here...
-                  </p>
-                </div>
+
+              {outputText && (
+                <Button
+                  onClick={() => handleCopy(outputText)}
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg shadow-green-500/25 transition-all duration-150 ease-in-out hover:scale-[1.02] active:scale-[0.98]"
+                  size="lg"
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy Humanized Text
+                </Button>
               )}
             </div>
+          </div>
 
-            {outputText && (
-              <Button
-                onClick={() => handleCopy(outputText)}
-                className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
-              >
-                <Copy className="w-4 h-4 mr-2" />
-                Copy Humanized Text
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          {(inputText.trim() || outputText.trim()) && (
+            <div className="mt-8 pt-6 border-t border-slate-200/80">
+              <h4 className="text-base font-semibold text-slate-800 mb-4">Fine-tune Output</h4>
+              <div className="flex flex-wrap gap-3 items-center">
+                <Button
+                  onClick={() => handleTransformation("removeEmDashes")}
+                  variant="outline"
+                  size="sm"
+                  className={
+                    appliedTransformations.removeEmDashes
+                      ? "bg-green-100 border-green-300 text-green-700 hover:bg-green-200/70 shadow-sm"
+                      : "border-slate-300 hover:bg-slate-50 hover:border-slate-400 shadow-sm"
+                  }
+                >
+                  <Minus className="w-3 h-3 mr-2" />
+                  Remove Dashes
+                </Button>
+
+                <div className="flex items-center gap-2 px-2 py-1 rounded-md border border-slate-300 bg-white shadow-sm">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="!h-7 !w-7 text-slate-600 hover:bg-slate-100 rounded-md"
+                    onClick={() =>
+                      handleTransformation("addTypos", Math.max(0, appliedTransformations.addTypos.level - 1))
+                    }
+                    disabled={appliedTransformations.addTypos.level === 0}
+                    aria-label="Decrease typos"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </Button>
+                  <span className="text-sm font-medium text-slate-700 min-w-[50px] text-center select-none">
+                    {appliedTransformations.addTypos.level} Typos
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="!h-7 !w-7 text-slate-600 hover:bg-slate-100 rounded-md"
+                    onClick={() =>
+                      handleTransformation("addTypos", Math.min(5, appliedTransformations.addTypos.level + 1))
+                    }
+                    disabled={appliedTransformations.addTypos.level === 5}
+                    aria-label="Increase typos"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {isProcessing && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
-          <Card className="p-8 bg-white shadow-2xl">
+        <div className="fixed inset-0 bg-gradient-to-br from-white/50 via-blue-50/30 to-purple-50/30 backdrop-blur-md flex items-center justify-center z-50">
+          <Card className="p-6 sm:p-8 bg-white shadow-2xl border-0 rounded-xl">
             <div className="flex items-center gap-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              <p className="text-slate-700 font-medium">Processing your text...</p>
+              <div className="relative h-8 w-8">
+                <div className="animate-spin rounded-full h-full w-full border-2 border-blue-200"></div>
+                <div className="animate-spin rounded-full h-full w-full border-t-2 border-b-2 border-blue-500 absolute top-0 left-0"></div>
+              </div>
+              <div>
+                <p className="text-slate-800 font-semibold text-lg">Processing your text...</p>
+                <p className="text-slate-500 text-sm">This may take a few moments.</p>
+              </div>
             </div>
           </Card>
         </div>

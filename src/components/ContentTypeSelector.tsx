@@ -1,133 +1,136 @@
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { UseCase } from '@/utils/textProcessing';
-import { Briefcase, FileText, MessageSquare, Palette, Settings2, User } from 'lucide-react';
-import { useEffect, useState } from 'react';
+"use client"
+
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import type { UseCase } from "@/utils/textProcessing"; // Make sure UseCase still excludes 'technical'
+import { ChevronDown, Settings } from "lucide-react"
+import { useEffect, useState } from "react"; // Added React and useEffect
 
 interface ContentTypeSelectorProps {
-  useCase: UseCase;
-  customPrompt?: string;
-  onUseCaseChange: (useCase: UseCase, customPrompt?: string) => void;
-  isMobile?: boolean;
+  useCase: UseCase
+  customPrompt: string
+  onUseCaseChange: (useCase: UseCase, customPrompt?: string) => void
+  isMobile: boolean // isMobile is kept but v0 design doesn't explicitly use it for this component
 }
 
+// Adjusted v0 options to exclude 'technical' and match existing UseCase type
 const useCaseOptions = [
-  { value: 'academic' as UseCase, name: 'Academic Paper', icon: FileText, description: 'Research papers, essays, formal writing' },
-  { value: 'professional' as UseCase, name: 'Professional/CV', icon: Briefcase, description: 'Resumes, cover letters, business documents' },
-  { value: 'casual' as UseCase, name: 'Blog/Article', icon: User, description: 'Blog posts, articles, informal writing' },
-  { value: 'social' as UseCase, name: 'Social Media', icon: MessageSquare, description: 'Posts, captions, social content' },
-  { value: 'creative' as UseCase, name: 'Creative Writing', icon: Palette, description: 'Stories, creative content, fiction' },
-  { value: 'custom' as UseCase, name: 'Custom', icon: Settings2, description: 'Define your own use case' },
-];
+  { value: "professional" as UseCase, label: "Professional/CV", description: "Business documents, resumes" },
+  { value: "academic" as UseCase, label: "Academic", description: "Research papers, essays" },
+  { value: "creative" as UseCase, label: "Creative", description: "Stories, blogs, creative writing" },
+  { value: "casual" as UseCase, label: "Casual", description: "Social media, informal text" },
+  // { value: "technical" as UseCase, label: "Technical", description: "Documentation, manuals" }, // Kept excluded
+  { value: "custom" as UseCase, label: "Custom", description: "Define your own style" },
+]
 
-const ContentTypeSelector = ({ useCase, customPrompt, onUseCaseChange, isMobile = false }: ContentTypeSelectorProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [tempUseCase, setTempUseCase] = useState(useCase);
-  const [tempCustomPrompt, setTempCustomPrompt] = useState(customPrompt || '');
+export default function ContentTypeSelector({
+  useCase,
+  customPrompt,
+  onUseCaseChange,
+  isMobile, // Kept in props
+}: ContentTypeSelectorProps) {
+  const [tempCustomPrompt, setTempCustomPrompt] = useState(customPrompt)
+  const [isCustomOpen, setIsCustomOpen] = useState(false)
 
-  // Update temp values when props change
+  // Sync tempCustomPrompt if the prop changes from outside
   useEffect(() => {
-    setTempUseCase(useCase);
     setTempCustomPrompt(customPrompt || '');
-  }, [useCase, customPrompt]);
+  }, [customPrompt]);
 
-  const currentOption = useCaseOptions.find(option => option.value === useCase);
+  const currentOption = useCaseOptions.find((option) => option.value === useCase)
 
-  const handleSave = () => {
-    onUseCaseChange(tempUseCase, tempUseCase === 'custom' ? tempCustomPrompt : undefined);
-    setIsOpen(false);
-  };
+  const handleUseCaseSelect = (newUseCase: UseCase) => {
+    if (newUseCase === "custom") {
+      // If custom is already selected and popover is open, this click might be to close it via outside click
+      // or if it's to open, ensure temp prompt is current
+      if(useCase === "custom") {
+        setTempCustomPrompt(customPrompt);
+      }
+      setIsCustomOpen(true)
+    } else {
+      onUseCaseChange(newUseCase)
+      setIsCustomOpen(false) // Close custom popover if another type is selected
+    }
+  }
 
-
-
-  if (isMobile) {
-    return (
-      <Drawer open={isOpen} onOpenChange={setIsOpen}>
-        <DrawerTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Settings2 className="w-4 h-4" />
-            <span className="hidden sm:inline">{currentOption?.name}</span>
-          </Button>
-        </DrawerTrigger>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Select Content Type</DrawerTitle>
-          </DrawerHeader>
-          <div className="p-4">
-            <SelectorContent tempUseCase={tempUseCase} setTempUseCase={setTempUseCase} tempCustomPrompt={tempCustomPrompt} setTempCustomPrompt={setTempCustomPrompt} handleSave={handleSave} />
-          </div>
-        </DrawerContent>
-      </Drawer>
-    );
+  const handleCustomSubmit = () => {
+    onUseCaseChange("custom", tempCustomPrompt)
+    setIsCustomOpen(false)
+  }
+  
+  const handleCustomCancel = () => {
+    setTempCustomPrompt(customPrompt); // Reset to original custom prompt on cancel
+    setIsCustomOpen(false);
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Settings2 className="w-4 h-4" />
-          <span className="hidden sm:inline">{currentOption?.name}</span>
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Select Content Type</DialogTitle>
-        </DialogHeader>
-        <SelectorContent tempUseCase={tempUseCase} setTempUseCase={setTempUseCase} tempCustomPrompt={tempCustomPrompt} setTempCustomPrompt={setTempCustomPrompt} handleSave={handleSave} />
-      </DialogContent>
-    </Dialog>
-  );
-};
+    <div className="flex items-center gap-2">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="min-w-[140px] justify-between">
+            {currentOption?.label || "Select Type"} {/* Fallback text */}
+            <ChevronDown className="w-4 h-4 ml-2" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-64">
+          <DropdownMenuLabel>Content Type</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {useCaseOptions.map((option) => (
+            <DropdownMenuItem
+              key={option.value}
+              onClick={() => handleUseCaseSelect(option.value)}
+              className="flex flex-col items-start gap-1 p-3 cursor-pointer" // Added cursor-pointer
+            >
+              <div className="font-medium">{option.label}</div>
+              <div className="text-xs text-muted-foreground">{option.description}</div>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-export default ContentTypeSelector;
-
-function SelectorContent ({ tempUseCase, setTempUseCase, tempCustomPrompt, setTempCustomPrompt, handleSave }: { tempUseCase: UseCase, setTempUseCase: (useCase: UseCase) => void, tempCustomPrompt: string, setTempCustomPrompt: (prompt: string) => void, handleSave: () => void }) {
-  return (
-  <div className="space-y-6">
-    <div className="grid gap-3">
-      {useCaseOptions.map((option) => {
-        const Icon = option.icon;
-        return (
-          <div
-            key={option.value}
-            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-              tempUseCase === option.value
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-slate-200 hover:border-slate-300'
-            }`}
-            onClick={() => setTempUseCase(option.value)}
-          >
-            <div className="flex items-start gap-3">
-              <Icon className="w-5 h-5 text-slate-600 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="font-medium text-slate-900">{option.name}</h3>
-                <p className="text-sm text-slate-500 mt-1">{option.description}</p>
+      {/* Custom Popover - only triggerable if useCase is already custom OR if custom is selected from dropdown */}
+      {(useCase === "custom" || isCustomOpen) && (
+        <Popover open={isCustomOpen} onOpenChange={setIsCustomOpen}>
+          <PopoverTrigger asChild>
+            {/* This button is more of a visual indicator when custom is selected; popover opens via Dropdown or if already custom */}
+            <Button variant="outline" size="icon" disabled={useCase !== 'custom' && !isCustomOpen} className={useCase === 'custom' ? 'ring-2 ring-blue-500' : ''}>
+              <Settings className="w-4 h-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="custom-prompt">Custom Instructions</Label>
+                <Input
+                  id="custom-prompt"
+                  placeholder="e.g., Make it sound like a teenager..."
+                  value={tempCustomPrompt}
+                  onChange={(e) => setTempCustomPrompt(e.target.value)}
+                  className="mt-2"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleCustomSubmit} size="sm" className="flex-1">
+                  Apply
+                </Button>
+                <Button variant="outline" onClick={handleCustomCancel} size="sm" className="flex-1">
+                  Cancel
+                </Button>
               </div>
             </div>
-          </div>
-        );
-      })}
+          </PopoverContent>
+        </Popover>
+      )}
     </div>
-
-    {tempUseCase === 'custom' && (
-      <div className="space-y-2">
-        <Label htmlFor="custom-prompt">Custom Use Case</Label>
-        <Input
-          id="custom-prompt"
-          placeholder="Describe your content type..."
-          value={tempCustomPrompt}
-          onChange={(e) => setTempCustomPrompt(e.target.value)}
-          autoComplete="off"
-        />
-      </div>
-    )}
-
-    <Button onClick={handleSave} className="w-full">
-      Apply Content Type
-    </Button>
-  </div>
-  );
+  )
 }
