@@ -1,5 +1,7 @@
 // Text processing utilities for humanizing AI-generated content
 
+import { aiService } from './aiService';
+
 export const removeEmDashes = (text: string): string => {
   // Remove em dashes and replace with regular dashes
   return text
@@ -88,7 +90,6 @@ export const getHumanizationPrompts = (useCase: UseCase, customPrompt?: string) 
         [/\butilize\b/gi, 'use'],
         [/\bfacilitate\b/gi, 'help'],
         [/\bdemonstrate\b/gi, 'show'],
-        [/\bimplement\b/gi, 'do'],
         [/\bsubsequently\b/gi, 'then'],
         [/\bnevertheless\b/gi, 'but'],
       ]
@@ -157,119 +158,29 @@ export const getHumanizationPrompts = (useCase: UseCase, customPrompt?: string) 
 };
 
 export const humanizeText = async (text: string, useCase: UseCase = 'professional', customPrompt?: string): Promise<string> => {
-  // Simulate AI processing
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  console.log('Starting AI humanization with use case:', useCase);
   
-  let humanized = text;
-  const prompts = getHumanizationPrompts(useCase, customPrompt);
-  
-  console.log('Humanizing text with use case:', useCase);
-  
-  // Apply use-case specific replacements
-  prompts.replacements.forEach(([pattern, replacement]) => {
-    if (typeof pattern === 'string') {
-      humanized = humanized.replace(new RegExp(pattern, 'gi'), replacement as string);
-    } else {
-      humanized = humanized.replace(pattern, replacement as string);
-    }
-  });
-  
-  // Common AI-ish patterns to replace
-  humanized = humanized
-    .replace(/\. However,/g, '. But')
-    .replace(/\. Therefore,/g, '. So')
-    .replace(/\. Additionally,/g, '. And')
-    .replace(/\. Consequently,/g, '. As a result')
-    .replace(/\bSignificantly,?\s*/gi, '')
-    .replace(/\bNotably,?\s*/gi, '')
-    .replace(/\bInterestingly,?\s*/gi, '')
-    .replace(/\bImportantly,?\s*/gi, '')
-    .replace(/\bEssentially,?\s*/gi, '')
-    .replace(/\bUltimately,?\s*/gi, '')
-    .replace(/\bFundamentally,?\s*/gi, '')
-    .replace(/\bBasically,?\s*/gi, '')
-    .replace(/\. It's worth noting that/gi, '. Note that')
-    .replace(/\. It's important to understand that/gi, '. Remember that')
-    .replace(/\. It's crucial to recognize that/gi, '. Keep in mind that')
-    .replace(/\bcomprehensive\b/gi, 'complete')
-    .replace(/\boptimal\b/gi, 'best')
-    .replace(/\brobust\b/gi, 'strong')
-    .replace(/\bseamless\b/gi, 'smooth')
-    .replace(/\benhance\b/gi, 'improve')
-    .replace(/\bleverage\b/gi, 'use')
-    .replace(/\bsynergistic\b/gi, 'cooperative')
-    .replace(/\binnovative\b/gi, 'new')
-    .replace(/\bparadigm\b/gi, 'approach')
-    .replace(/\. This ensures that/gi, '. This means')
-    .replace(/\. This approach allows for/gi, '. This lets you')
-    .replace(/\. By implementing this/gi, '. Doing this')
-    // Remove redundant phrases
-    .replace(/\s+/g, ' ')
-    .trim();
-  
-  console.log('Original length:', text.length, 'Humanized length:', humanized.length);
-  return humanized;
+  try {
+    const result = await aiService.humanizeText(text, useCase, customPrompt);
+    console.log('AI humanization completed successfully');
+    return result;
+  } catch (error) {
+    console.error('AI humanization failed:', error);
+    throw error;
+  }
 };
 
 export const rewriteWithAI = async (text: string, useCase: UseCase = 'professional', customPrompt?: string): Promise<string> => {
-  // Simulate AI rewriting
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  console.log('Starting AI rewrite with use case:', useCase);
   
-  console.log('AI rewriting text with use case:', useCase);
-  
-  let rewritten = text;
-  
-  // Apply humanization first
-  rewritten = await humanizeText(rewritten, useCase, customPrompt);
-  
-  // Additional rewriting based on use case
-  if (useCase === 'social') {
-    // Make it more conversational
-    rewritten = rewritten
-      .replace(/^(.*?)(\.|\!|\?)/, (match, sentence, punct) => {
-        if (!sentence.toLowerCase().startsWith('hey') && !sentence.toLowerCase().startsWith('so')) {
-          return 'Hey! ' + sentence + punct;
-        }
-        return match;
-      })
-      .replace(/\bI think that\b/gi, 'I think')
-      .replace(/\bI believe that\b/gi, 'I believe');
-  } else if (useCase === 'casual') {
-    // Make it more relaxed
-    rewritten = rewritten
-      .replace(/\bI think that\b/gi, 'I think')
-      .replace(/\bI believe that\b/gi, 'I feel like')
-      .replace(/\bIt appears that\b/gi, 'It looks like')
-      .replace(/\bIt seems that\b/gi, 'It seems like');
-  } else if (useCase === 'academic') {
-    // Make it less robotic while keeping formality
-    rewritten = rewritten
-      .replace(/\bThis study shows\b/gi, 'The research indicates')
-      .replace(/\bThe results demonstrate\b/gi, 'Findings show')
-      .replace(/\bIt can be concluded\b/gi, 'We can conclude');
+  try {
+    const result = await aiService.rewriteText(text, useCase, customPrompt);
+    console.log('AI rewrite completed successfully');
+    return result;
+  } catch (error) {
+    console.error('AI rewrite failed:', error);
+    throw error;
   }
-  
-  // Add some sentence variety
-  const sentences = rewritten.split(/[.!?]+/).filter(s => s.trim().length > 0);
-  if (sentences.length > 1) {
-    // Occasionally start sentences differently
-    const rewrittenSentences = sentences.map((sentence, index) => {
-      const trimmed = sentence.trim();
-      if (index > 0 && Math.random() < 0.3 && trimmed.length > 0) {
-        // Sometimes vary sentence starters
-        if (trimmed.startsWith('The ')) {
-          return trimmed.replace(/^The /, 'This ');
-        } else if (trimmed.startsWith('This ')) {
-          return trimmed.replace(/^This /, 'The ');
-        }
-      }
-      return trimmed;
-    });
-    rewritten = rewrittenSentences.join('. ') + '.';
-  }
-  
-  console.log('AI rewrite completed');
-  return rewritten;
 };
 
 // Apply transformations while preserving previous ones

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Copy, Sparkles, Minus, Shuffle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ContentTypeSelector from '@/components/ContentTypeSelector';
+import ApiKeyManager from '@/components/ApiKeyManager';
 import { 
   humanizeText, 
   removeEmDashes, 
@@ -73,7 +73,7 @@ const TextProcessor = () => {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to humanize text. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to humanize text. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -95,7 +95,7 @@ const TextProcessor = () => {
     } catch (error) {
       toast({
         title: "Error",
-        description: "AI rewrite failed. Please try again.",
+        description: error instanceof Error ? error.message : "AI rewrite failed. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -125,6 +125,7 @@ const TextProcessor = () => {
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl font-semibold text-slate-800">Original Text</CardTitle>
               <div className="flex items-center gap-2">
+                <ApiKeyManager />
                 <ContentTypeSelector
                   useCase={useCase}
                   customPrompt={customPrompt}
