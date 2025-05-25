@@ -19,11 +19,6 @@ const Index = () => {
 
       {/* Actual Page Content */}
       <div className="relative z-10 flex flex-col flex-1">
-        <header className="py-6 px-4 sm:px-6 lg:px-8">
-          <div className="container mx-auto flex justify-center sm:justify-start">
-            <img src="/logo.svg" alt="HumanizeAI Logo" className="h-10 w-auto" />
-          </div>
-        </header>
         <main className="flex-1">
           <div className="container mx-auto px-4 py-12">
             <div className="text-center mb-16">

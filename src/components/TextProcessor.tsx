@@ -6,10 +6,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import {
-    applyTransformations,
-    humanizeText,
-    rewriteWithAI,
-    type UseCase
+  applyTransformations,
+  humanizeText,
+  rewriteWithAI,
+  type UseCase
 } from '@/utils/textProcessing';
 import { Copy, Minus, Plus, Shuffle, Sparkles } from 'lucide-react';
 import { useState } from 'react';
@@ -232,13 +232,13 @@ const TextProcessor = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="min-h-[300px] p-4 bg-gradient-to-br from-slate-50 to-blue-50/30 rounded-lg border border-slate-200">
+            <div className="min-h-[300px] p-4 bg-gradient-to-br from-slate-50 to-blue-50/30 rounded-lg border border-slate-200 flex">
               {outputText ? (
                 <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
                   {outputText}
                 </p>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center">
+                <div className="flex flex-col items-center justify-center flex-1">
                   <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-4">
                     <Sparkles className="w-8 h-8 text-blue-500" />
                   </div>
