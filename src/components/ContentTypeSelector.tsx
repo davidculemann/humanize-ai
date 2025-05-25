@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
@@ -30,6 +30,12 @@ const ContentTypeSelector = ({ useCase, customPrompt, onUseCaseChange, isMobile 
   const [isOpen, setIsOpen] = useState(false);
   const [tempUseCase, setTempUseCase] = useState(useCase);
   const [tempCustomPrompt, setTempCustomPrompt] = useState(customPrompt || '');
+
+  // Update temp values when props change
+  useEffect(() => {
+    setTempUseCase(useCase);
+    setTempCustomPrompt(customPrompt || '');
+  }, [useCase, customPrompt]);
 
   const currentOption = useCaseOptions.find(option => option.value === useCase);
 
@@ -73,6 +79,7 @@ const ContentTypeSelector = ({ useCase, customPrompt, onUseCaseChange, isMobile 
             placeholder="Describe your content type..."
             value={tempCustomPrompt}
             onChange={(e) => setTempCustomPrompt(e.target.value)}
+            autoComplete="off"
           />
         </div>
       )}
