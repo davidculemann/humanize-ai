@@ -22,11 +22,11 @@ const Index = () => {
               <div className="hidden sm:flex items-center gap-6 text-sm text-slate-600">
                 <span className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  AI Detection Bypass
+                  Make your content sound less robotic
                 </span>
                 <span className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  Natural Language
+                  Remove those pesky — dashes
                 </span>
               </div>
             </div>
