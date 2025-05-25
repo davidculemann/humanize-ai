@@ -96,7 +96,7 @@ const TextProcessor = () => {
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shrink-0">
                 <Wand2 className="w-4 h-4 text-white" />
               </div>
-              Text Humanizer
+              Text Humaniser
             </CardTitle>
             <div className="flex-shrink sm:flex-grow-0 sm:w-auto">
               <ContentTypeSelector
@@ -142,7 +142,7 @@ const TextProcessor = () => {
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-slate-800">Humanized Text</h3>
+                <h3 className="text-lg font-medium text-slate-800">Humanised Text</h3>
                 <div className="flex items-center gap-3">
                   <Badge variant="secondary" className="bg-green-100 text-green-700">
                     {outputText.length} characters
@@ -168,7 +168,7 @@ const TextProcessor = () => {
                     <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center mb-4 shadow-md">
                       <Sparkles className="w-8 h-8 text-blue-500" />
                     </div>
-                    <p className="text-slate-500 text-base font-medium mb-2">Ready to humanize</p>
+                    <p className="text-slate-500 text-base font-medium mb-2">Ready to humanise</p>
                     <p className="text-slate-400 text-sm">Your transformed text will appear here</p>
                   </div>
                 )}
@@ -181,7 +181,7 @@ const TextProcessor = () => {
                   size="lg"
                 >
                   <Copy className="w-4 h-4 mr-2" />
-                  Copy Humanized Text
+                  Copy Humanised Text
                 </Button>
               )}
             </div>

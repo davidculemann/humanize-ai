@@ -15,8 +15,8 @@ const Index = () => {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img src="/logo.svg" alt="HumanizeAI Logo" className="h-8 w-auto" />
-                <span className="text-xl font-semibold text-slate-800">HumanizeAI</span>
+                <img src="/logo.svg" alt="HumaniseAI Logo" className="h-8 w-auto" />
+                <span className="text-xl font-semibold text-slate-800">HumaniseAI</span>
               </div>
               
             </div>
@@ -27,7 +27,7 @@ const Index = () => {
           <div className="container mx-auto text-center max-w-4xl">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-full text-blue-700 text-sm font-medium mb-8">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              AI Text Humanizer
+              AI Text Humaniser
             </div>
 
             <h1 className="text-5xl md:text-6xl font-bold text-slate-900 mb-6">

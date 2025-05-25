@@ -1,4 +1,4 @@
-### HumanizeAI
+### HumaniseAI
 
 This was 90% "vibe coded" with Lovalbe to see how good it is, total time spent roughly 1 hour after having to rewrite and fix a lot of what Lovable had outputted.
 
