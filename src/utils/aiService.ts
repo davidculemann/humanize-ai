@@ -31,37 +31,52 @@ export class AIService {
     return this.apiKey;
   }
 
-  async humanizeText(text: string, useCase: string, customPrompt?: string): Promise<string> {
+  async humanizeText(
+    text: string,
+    useCase: string,
+    customPrompt?: string,
+    signal?: AbortSignal
+  ): Promise<string> {
     const apiKey = this.getApiKey();
     if (!apiKey) {
-      throw new Error('API key not set. Please configure the VITE_DEEPSEEK_API_KEY environment variable.');
+      throw new Error(
+        "API key not set. Please configure the VITE_DEEPSEEK_API_KEY environment variable."
+      );
     }
 
     const systemPrompt = this.buildSystemPrompt(useCase, customPrompt);
     
     try {
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'deepseek-chat',
-          messages: [
-            {
-              role: 'system',
-              content: systemPrompt
-            },
-            {
-              role: 'user',
-              content: `Please humanize this text:\n\n${text}`
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 4000,
-        }),
-      });
+      const response = await fetch(
+        "https://api.deepseek.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: "deepseek-chat",
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt,
+              },
+              {
+                role: "user",
+                content: `Humanize the following text:\n\n${text}`,
+              },
+            ],
+            temperature: 0.7,
+            max_tokens: 4000,
+          }),
+          signal,
+        }
+      );
+
+      if (signal?.aborted) {
+        throw new DOMException('Aborted by user', 'AbortError');
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -76,37 +91,52 @@ export class AIService {
     }
   }
 
-  async rewriteText(text: string, useCase: string, customPrompt?: string): Promise<string> {
+  async rewriteText(
+    text: string,
+    useCase: string,
+    customPrompt?: string,
+    signal?: AbortSignal
+  ): Promise<string> {
     const apiKey = this.getApiKey();
     if (!apiKey) {
-      throw new Error('API key not set. Please configure the VITE_DEEPSEEK_API_KEY environment variable.');
+      throw new Error(
+        "API key not set. Please configure the VITE_DEEPSEEK_API_KEY environment variable."
+      );
     }
 
     const systemPrompt = this.buildRewritePrompt(useCase, customPrompt);
     
     try {
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'deepseek-chat',
-          messages: [
-            {
-              role: 'system',
-              content: systemPrompt
-            },
-            {
-              role: 'user',
-              content: `Please rewrite this text:\n\n${text}`
-            }
-          ],
-          temperature: 0.8,
-          max_tokens: 4000,
-        }),
-      });
+      const response = await fetch(
+        "https://api.deepseek.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: "deepseek-chat",
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt,
+              },
+              {
+                role: "user",
+                content: `Rewrite the following text:\n\n${text}`,
+              },
+            ],
+            temperature: 0.8,
+            max_tokens: 4000,
+          }),
+          signal,
+        }
+      );
+
+      if (signal?.aborted) {
+        throw new DOMException('Aborted by user', 'AbortError');
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -122,18 +152,18 @@ export class AIService {
   }
 
   private buildSystemPrompt(useCase: string, customPrompt?: string): string {
-    const basePrompt = `You are an expert text humanizer. Your job is to take AI-generated text and make it sound more natural and human-like. Focus on:
+    const basePrompt = `Your task is to humanize the provided text.
+REMOVE ALL PREAMBLE. REMOVE ALL INTRODUCTORY PHRASES. REMOVE ALL CLOSING REMARKS.
+Your response MUST be ONLY the humanized text and nothing else.
+Do NOT include any markdown formatting (e.g., do not use \`\`\` or backticks).
+Focus on:
+1. Natural language, removing robotic patterns.
+2. Varied sentence structures.
+3. Conversational transitions.
+4. Eliminating artificial phrasing.
+5. Maintaining original meaning.
 
-1. Removing robotic, formulaic language patterns
-2. Adding natural variations in sentence structure
-3. Using more conversational transitions
-4. Eliminating overly formal or artificial phrasing
-5. Adding subtle imperfections that humans naturally have
-6. Maintaining the original meaning and key information
-
-Return ONLY the processed text. Do not include any additional commentary, introductory phrases, or markdown formatting (e.g., do not wrap code in backticks or \`\`\`jsx ... \`\`\` blocks).
-
-IMPORTANT: Your entire response must consist *only* of the resulting processed text. Absolutely no explanatory preambles, introductory/closing remarks, or markdown code block syntax (like \`\`\`jsx or \`\`\`). Just the raw text.`;
+OUTPUT ONLY THE PROCESSED TEXT.`;
 
     const useCasePrompts = {
       academic: 'Write in an academic style suitable for research papers and scholarly work, but make it sound like it was written by a human researcher rather than AI.',
@@ -148,20 +178,18 @@ IMPORTANT: Your entire response must consist *only* of the resulting processed t
   }
 
   private buildRewritePrompt(useCase: string, customPrompt?: string): string {
-    const basePrompt = `You are an expert content rewriter. You are a bot working on a website called HumanizeAI, where users paste in some text
-    That was originally written by an AI, and that they want to make it sound more human. Remember, you are not replying or commenting on the text, you are rewriting it.
-    That means if the text asks a questions, you do not answer it, you rewrite the text.
-    Your job is to completely rewrite the given text while:
+    const basePrompt = `Your task is to rewrite the provided text according to the specified use case.
+REMOVE ALL PREAMBLE. REMOVE ALL INTRODUCTORY PHRASES. REMOVE ALL CLOSING REMARKS.
+Your response MUST be ONLY the rewritten text and nothing else.
+Do NOT include any markdown formatting (e.g., do not use \`\`\` or backticks).
+Focus on:
+1. Preserving core meaning.
+2. Significantly changing structure and flow.
+3. Using different vocabulary.
+4. Sounding natural and human-written.
+5. Adapting tone for the use case.
 
-1. Preserving the core meaning and key information
-2. Changing the structure and flow significantly
-3. Using different vocabulary and phrasing
-4. Making it sound natural and human-written
-5. Adapting the tone for the specified use case
-
-Return ONLY the rewritten text. Do not include any additional commentary, introductory phrases, or markdown formatting (e.g., do not wrap code in backticks or \`\`\`jsx ... \`\`\` blocks).
-
-IMPORTANT: Your entire response must consist *only* of the resulting rewritten text/code. Absolutely no explanatory preambles, introductory/closing remarks, or markdown code block syntax (like \`\`\`jsx or \`\`\`). Just the raw text/code.`;
+OUTPUT ONLY THE REWRITTEN TEXT.`;
 
     const useCasePrompts = {
       academic: 'Rewrite in an academic style with proper scholarly language and structure.',
