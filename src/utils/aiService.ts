@@ -1,4 +1,3 @@
-
 interface AIResponse {
   text: string;
 }
@@ -7,7 +6,9 @@ export class AIService {
   private static instance: AIService;
   private apiKey: string | null = null;
 
-  private constructor() {}
+  private constructor() {
+    this.apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY || null;
+  }
 
   static getInstance(): AIService {
     if (!AIService.instance) {
@@ -17,13 +18,15 @@ export class AIService {
   }
 
   setApiKey(key: string) {
-    this.apiKey = key;
-    localStorage.setItem('deepseek_api_key', key);
+    console.warn("setApiKey is deprecated. API key should be set via VITE_DEEPSEEK_API_KEY environment variable.");
   }
 
   getApiKey(): string | null {
     if (!this.apiKey) {
-      this.apiKey = localStorage.getItem('deepseek_api_key');
+       this.apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY || null;
+       if (!this.apiKey) {
+        console.error("VITE_DEEPSEEK_API_KEY not found in environment variables. Make sure it is set in your .env file and prefixed with VITE_ (e.g., VITE_DEEPSEEK_API_KEY).");
+       }
     }
     return this.apiKey;
   }
@@ -31,7 +34,7 @@ export class AIService {
   async humanizeText(text: string, useCase: string, customPrompt?: string): Promise<string> {
     const apiKey = this.getApiKey();
     if (!apiKey) {
-      throw new Error('API key not set. Please provide your DeepSeek API key.');
+      throw new Error('API key not set. Please configure the VITE_DEEPSEEK_API_KEY environment variable.');
     }
 
     const systemPrompt = this.buildSystemPrompt(useCase, customPrompt);
@@ -76,7 +79,7 @@ export class AIService {
   async rewriteText(text: string, useCase: string, customPrompt?: string): Promise<string> {
     const apiKey = this.getApiKey();
     if (!apiKey) {
-      throw new Error('API key not set. Please provide your DeepSeek API key.');
+      throw new Error('API key not set. Please configure the VITE_DEEPSEEK_API_KEY environment variable.');
     }
 
     const systemPrompt = this.buildRewritePrompt(useCase, customPrompt);
@@ -128,7 +131,7 @@ export class AIService {
 5. Adding subtle imperfections that humans naturally have
 6. Maintaining the original meaning and key information
 
-`;
+Return ONLY the humanized version of the text, without any additional commentary or introductory phrases.`;
 
     const useCasePrompts = {
       academic: 'Write in an academic style suitable for research papers and scholarly work, but make it sound like it was written by a human researcher rather than AI.',
@@ -136,8 +139,7 @@ export class AIService {
       casual: 'Write in a casual, conversational tone suitable for blog posts and articles.',
       social: 'Write in a casual, engaging tone suitable for social media posts with natural personality.',
       creative: 'Write with creative flair suitable for storytelling and creative content.',
-      technical: 'Write in a clear, technical style suitable for documentation and tutorials.',
-      custom: customPrompt || 'Follow the user\'s custom instructions for tone and style.'
+      custom: customPrompt || "Follow the user's custom instructions for tone and style."
     };
 
     return basePrompt + (useCasePrompts[useCase as keyof typeof useCasePrompts] || useCasePrompts.professional);
@@ -152,7 +154,7 @@ export class AIService {
 4. Making it sound natural and human-written
 5. Adapting the tone for the specified use case
 
-`;
+Return ONLY the rewritten version of the text, without any additional commentary or introductory phrases.`;
 
     const useCasePrompts = {
       academic: 'Rewrite in an academic style with proper scholarly language and structure.',
@@ -160,8 +162,7 @@ export class AIService {
       casual: 'Rewrite in a casual, conversational style.',
       social: 'Rewrite for social media with engaging, personal language.',
       creative: 'Rewrite with creative and expressive language.',
-      technical: 'Rewrite in clear, technical language.',
-      custom: customPrompt || 'Follow the user\'s custom instructions for rewriting.'
+      custom: customPrompt || "Follow the user's custom instructions for rewriting."
     };
 
     return basePrompt + (useCasePrompts[useCase as keyof typeof useCasePrompts] || useCasePrompts.professional);

@@ -1,13 +1,11 @@
-
-import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Settings2, FileText, Briefcase, User, MessageSquare, Palette, Code } from 'lucide-react';
 import { UseCase } from '@/utils/textProcessing';
+import { Briefcase, FileText, MessageSquare, Palette, Settings2, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface ContentTypeSelectorProps {
   useCase: UseCase;
@@ -22,7 +20,6 @@ const useCaseOptions = [
   { value: 'casual' as UseCase, name: 'Blog/Article', icon: User, description: 'Blog posts, articles, informal writing' },
   { value: 'social' as UseCase, name: 'Social Media', icon: MessageSquare, description: 'Posts, captions, social content' },
   { value: 'creative' as UseCase, name: 'Creative Writing', icon: Palette, description: 'Stories, creative content, fiction' },
-  { value: 'technical' as UseCase, name: 'Technical Docs', icon: Code, description: 'Documentation, tutorials, guides' },
   { value: 'custom' as UseCase, name: 'Custom', icon: Settings2, description: 'Define your own use case' },
 ];
 
@@ -44,51 +41,7 @@ const ContentTypeSelector = ({ useCase, customPrompt, onUseCaseChange, isMobile 
     setIsOpen(false);
   };
 
-  const SelectorContent = () => (
-    <div className="space-y-6">
-      <div className="grid gap-3">
-        {useCaseOptions.map((option) => {
-          const Icon = option.icon;
-          return (
-            <div
-              key={option.value}
-              className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                tempUseCase === option.value
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-slate-200 hover:border-slate-300'
-              }`}
-              onClick={() => setTempUseCase(option.value)}
-            >
-              <div className="flex items-start gap-3">
-                <Icon className="w-5 h-5 text-slate-600 mt-0.5" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-slate-900">{option.name}</h3>
-                  <p className="text-sm text-slate-500 mt-1">{option.description}</p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
 
-      {tempUseCase === 'custom' && (
-        <div className="space-y-2">
-          <Label htmlFor="custom-prompt">Custom Use Case</Label>
-          <Input
-            id="custom-prompt"
-            placeholder="Describe your content type..."
-            value={tempCustomPrompt}
-            onChange={(e) => setTempCustomPrompt(e.target.value)}
-            autoComplete="off"
-          />
-        </div>
-      )}
-
-      <Button onClick={handleSave} className="w-full">
-        Apply Content Type
-      </Button>
-    </div>
-  );
 
   if (isMobile) {
     return (
@@ -104,7 +57,7 @@ const ContentTypeSelector = ({ useCase, customPrompt, onUseCaseChange, isMobile 
             <DrawerTitle>Select Content Type</DrawerTitle>
           </DrawerHeader>
           <div className="p-4">
-            <SelectorContent />
+            <SelectorContent tempUseCase={tempUseCase} setTempUseCase={setTempUseCase} tempCustomPrompt={tempCustomPrompt} setTempCustomPrompt={setTempCustomPrompt} handleSave={handleSave} />
           </div>
         </DrawerContent>
       </Drawer>
@@ -123,10 +76,58 @@ const ContentTypeSelector = ({ useCase, customPrompt, onUseCaseChange, isMobile 
         <DialogHeader>
           <DialogTitle>Select Content Type</DialogTitle>
         </DialogHeader>
-        <SelectorContent />
+        <SelectorContent tempUseCase={tempUseCase} setTempUseCase={setTempUseCase} tempCustomPrompt={tempCustomPrompt} setTempCustomPrompt={setTempCustomPrompt} handleSave={handleSave} />
       </DialogContent>
     </Dialog>
   );
 };
 
 export default ContentTypeSelector;
+
+function SelectorContent ({ tempUseCase, setTempUseCase, tempCustomPrompt, setTempCustomPrompt, handleSave }: { tempUseCase: UseCase, setTempUseCase: (useCase: UseCase) => void, tempCustomPrompt: string, setTempCustomPrompt: (prompt: string) => void, handleSave: () => void }) {
+  return (
+  <div className="space-y-6">
+    <div className="grid gap-3">
+      {useCaseOptions.map((option) => {
+        const Icon = option.icon;
+        return (
+          <div
+            key={option.value}
+            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+              tempUseCase === option.value
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-slate-200 hover:border-slate-300'
+            }`}
+            onClick={() => setTempUseCase(option.value)}
+          >
+            <div className="flex items-start gap-3">
+              <Icon className="w-5 h-5 text-slate-600 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-medium text-slate-900">{option.name}</h3>
+                <p className="text-sm text-slate-500 mt-1">{option.description}</p>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+    {tempUseCase === 'custom' && (
+      <div className="space-y-2">
+        <Label htmlFor="custom-prompt">Custom Use Case</Label>
+        <Input
+          id="custom-prompt"
+          placeholder="Describe your content type..."
+          value={tempCustomPrompt}
+          onChange={(e) => setTempCustomPrompt(e.target.value)}
+          autoComplete="off"
+        />
+      </div>
+    )}
+
+    <Button onClick={handleSave} className="w-full">
+      Apply Content Type
+    </Button>
+  </div>
+  );
+}

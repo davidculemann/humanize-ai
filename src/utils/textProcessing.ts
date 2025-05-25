@@ -12,11 +12,15 @@ export const removeEmDashes = (text: string): string => {
     .trim();
 };
 
-export const addTypos = (text: string): string => {
+export const addTypos = (text: string, typoLevel: number = 1): string => {
+  if (typoLevel <= 0) return text;
+
   const words = text.split(' ');
+  // Adjust typoRate based on typoLevel. Max 10% at level 5.
+  const typoRate = Math.min(0.10, (typoLevel * 0.02)); 
+
   const typoWords = words.map(word => {
-    // Add subtle typos to about 2% of words
-    if (Math.random() < 0.02 && word.length > 4) {
+    if (Math.random() < typoRate && word.length > 4) {
       const typoType = Math.random();
       
       if (typoType < 0.4) {
@@ -41,7 +45,7 @@ export const addTypos = (text: string): string => {
   return typoWords.join(' ');
 };
 
-export type UseCase = 'academic' | 'professional' | 'casual' | 'social' | 'creative' | 'technical' | 'custom';
+export type UseCase = 'academic' | 'professional' | 'casual' | 'social' | 'creative' | 'custom';
 
 export const getHumanizationPrompts = (useCase: UseCase, customPrompt?: string) => {
   const prompts = {
@@ -127,20 +131,6 @@ export const getHumanizationPrompts = (useCase: UseCase, customPrompt?: string) 
         [/\bnevertheless\b/gi, 'yet'],
       ]
     },
-    technical: {
-      name: 'Technical Documentation',
-      replacements: [
-        [/\bFurthermore,?\s*/gi, 'Additionally, '],
-        [/\bMoreover,?\s*/gi, 'Also, '],
-        [/\bIn conclusion,?\s*/gi, 'To summarize, '],
-        [/\bIt is important to note that\s*/gi, 'Note: '],
-        [/\bIt should be noted that\s*/gi, 'Important: '],
-        [/\bin order to\b/gi, 'to'],
-        [/\butilize\b/gi, 'use'],
-        [/\bfacilitate\b/gi, 'enable'],
-        [/\bleverage\b/gi, 'use'],
-      ]
-    },
     custom: {
       name: customPrompt || 'Custom',
       replacements: [
@@ -188,20 +178,19 @@ export const applyTransformations = (
   originalText: string,
   transformations: {
     removeEmDashes?: boolean;
-    addTypos?: boolean;
+    addTypos?: { level: number };
     humanize?: { useCase: UseCase; customPrompt?: string };
     aiRewrite?: { useCase: UseCase; customPrompt?: string };
   }
 ): string => {
   let result = originalText;
   
-  // Always apply in this order to preserve transformations
   if (transformations.removeEmDashes) {
     result = removeEmDashes(result);
   }
   
-  if (transformations.addTypos) {
-    result = addTypos(result);
+  if (transformations.addTypos && transformations.addTypos.level > 0) {
+    result = addTypos(result, transformations.addTypos.level);
   }
   
   return result;

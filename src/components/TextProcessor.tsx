@@ -1,21 +1,18 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Copy, Sparkles, Minus, Shuffle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
 import ContentTypeSelector from '@/components/ContentTypeSelector';
-import ApiKeyManager from '@/components/ApiKeyManager';
-import { 
-  humanizeText, 
-  removeEmDashes, 
-  addTypos, 
-  rewriteWithAI,
-  applyTransformations,
-  type UseCase 
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useToast } from '@/hooks/use-toast';
+import {
+    applyTransformations,
+    humanizeText,
+    rewriteWithAI,
+    type UseCase
 } from '@/utils/textProcessing';
+import { Copy, Minus, Plus, Shuffle, Sparkles } from 'lucide-react';
+import { useState } from 'react';
 
 const TextProcessor = () => {
   const [inputText, setInputText] = useState('');
@@ -25,7 +22,7 @@ const TextProcessor = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [appliedTransformations, setAppliedTransformations] = useState({
     removeEmDashes: false,
-    addTypos: false,
+    addTypos: { level: 0 },
   });
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -46,17 +43,26 @@ const TextProcessor = () => {
     }
   };
 
-  const handleTransformation = (type: 'removeEmDashes' | 'addTypos') => {
-    if (!inputText.trim()) return;
+  const handleTransformation = (type: 'removeEmDashes' | 'addTypos', value?: number | boolean) => {
+    const textToTransform = outputText.trim() ? outputText : inputText;
+    if (!textToTransform.trim()) return;
+
+    const newAppliedTransformations = { ...appliedTransformations };
+
+    if (type === 'removeEmDashes') {
+      newAppliedTransformations.removeEmDashes = !newAppliedTransformations.removeEmDashes;
+    } else if (type === 'addTypos') {
+      if (typeof value === 'number') {
+        newAppliedTransformations.addTypos = { level: value };
+      } else {
+        newAppliedTransformations.addTypos = { level: 0 };
+      }
+    }
     
-    const newTransformations = {
-      ...appliedTransformations,
-      [type]: true,
-    };
+    setAppliedTransformations(newAppliedTransformations);
     
-    const result = applyTransformations(inputText, newTransformations);
+    const result = applyTransformations(textToTransform, newAppliedTransformations);
     setOutputText(result);
-    setAppliedTransformations(newTransformations);
   };
 
   const handleHumanize = async () => {
@@ -65,8 +71,6 @@ const TextProcessor = () => {
     setIsProcessing(true);
     try {
       let result = await humanizeText(inputText, useCase, customPrompt);
-      
-      // Apply any existing transformations
       result = applyTransformations(result, appliedTransformations);
       
       setOutputText(result);
@@ -87,8 +91,6 @@ const TextProcessor = () => {
     setIsProcessing(true);
     try {
       let result = await rewriteWithAI(inputText, useCase, customPrompt);
-      
-      // Apply any existing transformations
       result = applyTransformations(result, appliedTransformations);
       
       setOutputText(result);
@@ -106,7 +108,7 @@ const TextProcessor = () => {
   const resetTransformations = () => {
     setAppliedTransformations({
       removeEmDashes: false,
-      addTypos: false,
+      addTypos: { level: 0 },
     });
     setOutputText('');
   };
@@ -125,7 +127,6 @@ const TextProcessor = () => {
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl font-semibold text-slate-800">Original Text</CardTitle>
               <div className="flex items-center gap-2">
-                <ApiKeyManager />
                 <ContentTypeSelector
                   useCase={useCase}
                   customPrompt={customPrompt}
@@ -179,14 +180,31 @@ const TextProcessor = () => {
                 Remove Dashes
               </Button>
               
-              <Button
-                onClick={() => handleTransformation('addTypos')}
-                disabled={!inputText.trim()}
-                variant="outline"
-                className={appliedTransformations.addTypos ? "bg-green-50 border-green-200" : ""}
-              >
-                Add Typos
-              </Button>
+              <div className="col-span-1 flex items-center justify-between h-10 px-2 rounded-md border border-slate-200">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="!h-8 !w-8 text-slate-600 hover:bg-slate-100"
+                  onClick={() => handleTransformation('addTypos', Math.max(0, appliedTransformations.addTypos.level - 1))}
+                  disabled={!inputText.trim() || appliedTransformations.addTypos.level === 0}
+                  aria-label="Decrease typos"
+                >
+                  <Minus className="w-4 h-4" />
+                </Button>
+                <span className="text-sm font-medium text-slate-700 select-none">
+                  {appliedTransformations.addTypos.level} Typos
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="!h-8 !w-8 text-slate-600 hover:bg-slate-100"
+                  onClick={() => handleTransformation('addTypos', Math.min(5, appliedTransformations.addTypos.level + 1))}
+                  disabled={!inputText.trim() || appliedTransformations.addTypos.level === 5}
+                  aria-label="Increase typos"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

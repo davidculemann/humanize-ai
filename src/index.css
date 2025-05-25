@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 0 0% 100%; /* Light theme background: white */
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -99,3 +99,59 @@
     @apply bg-background text-foreground;
   }
 }
+
+.background-grid {
+  background-image: linear-gradient(to right, rgba(203, 213, 225, 0.2) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(203, 213, 225, 0.2) 1px, transparent 1px); /* slate-300 at 20% opacity */
+  background-size: 40px 40px; /* Grid cell size */
+  background-position: center;
+}
+
+.background-grid-dark {
+  background-image: linear-gradient(to right, rgba(51, 65, 85, 0.3) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(51, 65, 85, 0.3) 1px, transparent 1px);
+  background-size: 30px 30px;
+  background-position: center;
+}
+
+/* You might want to add a dark mode version if your app supports it */
+/* @media (prefers-color-scheme: dark) {
+  body {
+    @apply bg-slate-900;
+  }
+  .background-grid {
+    background-image: linear-gradient(to right, rgba(51, 65, 85, 0.3) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(51, 65, 85, 0.3) 1px, transparent 1px);
+  }
+} */
+
+/* Custom scrollbar (optional, for a more polished look) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-100;
+}
+ 
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full;
+}
+ 
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400;
+}
+
+/* Dark mode scrollbar (optional) */
+/* @media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-800;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-600;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-500;
+  }
+} */
