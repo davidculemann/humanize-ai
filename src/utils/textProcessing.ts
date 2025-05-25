@@ -147,11 +147,16 @@ export const getHumanizationPrompts = (useCase: UseCase, customPrompt?: string) 
   return prompts[useCase];
 };
 
-export const humanizeText = async (text: string, useCase: UseCase = 'professional', customPrompt?: string): Promise<string> => {
+export const humanizeText = async (
+  text: string,
+  useCase: UseCase = 'professional',
+  customPrompt?: string,
+  signal?: AbortSignal
+): Promise<string> => {
   console.log('Starting AI humanization with use case:', useCase);
   
   try {
-    const result = await aiService.humanizeText(text, useCase, customPrompt);
+    const result = await aiService.humanizeText(text, useCase, customPrompt, signal);
     console.log('AI humanization completed successfully');
     return result;
   } catch (error) {
@@ -160,11 +165,16 @@ export const humanizeText = async (text: string, useCase: UseCase = 'professiona
   }
 };
 
-export const rewriteWithAI = async (text: string, useCase: UseCase = 'professional', customPrompt?: string): Promise<string> => {
+export const rewriteWithAI = async (
+  text: string,
+  useCase: UseCase = 'professional',
+  customPrompt?: string,
+  signal?: AbortSignal
+): Promise<string> => {
   console.log('Starting AI rewrite with use case:', useCase);
   
   try {
-    const result = await aiService.rewriteText(text, useCase, customPrompt);
+    const result = await aiService.rewriteText(text, useCase, customPrompt, signal);
     console.log('AI rewrite completed successfully');
     return result;
   } catch (error) {
