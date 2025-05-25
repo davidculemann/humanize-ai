@@ -13,8 +13,8 @@ import {
   rewriteWithAI,
   type UseCase
 } from '@/utils/textProcessing';
-import { Copy, Minus, Plus, Shuffle, Sparkles, Wand2 } from 'lucide-react';
-import { useState } from 'react';
+import { Copy, Minus, Plus, Shuffle, Sparkles, Wand2, X } from 'lucide-react';
+import { useRef, useState } from 'react';
 
 const TextProcessor = () => {
   const [inputText, setInputText] = useState('');
@@ -26,6 +26,7 @@ const TextProcessor = () => {
     removeEmDashes: false,
     addTypos: { level: 0 },
   });
+  const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -71,19 +72,33 @@ const TextProcessor = () => {
     if (!inputText.trim()) return;
     
     setIsProcessing(true);
+    abortControllerRef.current = new AbortController();
+    const { signal } = abortControllerRef.current;
+
     try {
-      let result = await humanizeText(inputText, useCase, customPrompt);
+      let result = await humanizeText(inputText, useCase, customPrompt, signal);
+      if (signal.aborted) return;
       result = applyTransformations(result, appliedTransformations);
       
       setOutputText(result);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to humanize text. Please try again.",
-        variant: "destructive",
-      });
+      const typedError = error as Error | { name?: string; message?: string };
+      if (typedError.name === 'AbortError') {
+        toast({
+          title: "Processing Cancelled",
+          description: "The text processing was cancelled.",
+        });
+        setOutputText("");
+      } else {
+        toast({
+          title: "Error",
+          description: typedError instanceof Error ? typedError.message : "Failed to humanize text. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsProcessing(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -91,27 +106,40 @@ const TextProcessor = () => {
     if (!inputText.trim()) return;
     
     setIsProcessing(true);
+    abortControllerRef.current = new AbortController();
+    const { signal } = abortControllerRef.current;
+
     try {
-      let result = await rewriteWithAI(inputText, useCase, customPrompt);
+      let result = await rewriteWithAI(inputText, useCase, customPrompt, signal);
+      if (signal.aborted) return;
       result = applyTransformations(result, appliedTransformations);
       
       setOutputText(result);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "AI rewrite failed. Please try again.",
-        variant: "destructive",
-      });
+      const typedError = error as Error | { name?: string; message?: string };
+      if (typedError.name === 'AbortError') {
+        toast({
+          title: "Processing Cancelled",
+          description: "The text rewriting was cancelled.",
+        });
+        setOutputText("");
+      } else {
+        toast({
+          title: "Error",
+          description: typedError instanceof Error ? typedError.message : "AI rewrite failed. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsProcessing(false);
+      abortControllerRef.current = null;
     }
   };
 
-  const resetTransformations = () => {
-    setAppliedTransformations({
-      removeEmDashes: false,
-      addTypos: { level: 0 },
-    });
+  const handleCancelProcessing = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
   };
 
   const handleUseCaseChange = (newUseCase: UseCase, newCustomPrompt?: string) => {
@@ -204,7 +232,7 @@ const TextProcessor = () => {
                 </div>
               </div>
 
-              <div className="min-h-[320px] p-6 bg-gradient-to-br from-green-50/30 to-blue-50/20 rounded-xl border border-slate-200/80 overflow-y-auto shadow-inner inset-shadow-light">
+              <div className="min-h-[320px] p-6 bg-gradient-to-br from-green-50/30 to-blue-50/20 rounded-xl border border-slate-200/80 overflow-y-auto shadow-inner inset-shadow-light scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
                 {outputText ? (
                   <p className="text-slate-800 leading-relaxed whitespace-pre-wrap text-base">{outputText}</p>
                 ) : (
@@ -286,8 +314,8 @@ const TextProcessor = () => {
 
       {isProcessing && (
         <div className="fixed inset-0 bg-gradient-to-br from-white/50 via-blue-50/30 to-purple-50/30 backdrop-blur-md flex items-center justify-center z-50">
-          <Card className="p-6 sm:p-8 bg-white shadow-2xl border-0 rounded-xl">
-            <div className="flex items-center gap-4">
+          <Card className="p-6 sm:p-8 bg-white shadow-2xl border-0 rounded-xl w-full max-w-md">
+            <div className="flex items-center gap-4 mb-6">
               <div className="relative h-8 w-8">
                 <div className="animate-spin rounded-full h-full w-full border-2 border-blue-200"></div>
                 <div className="animate-spin rounded-full h-full w-full border-t-2 border-b-2 border-blue-500 absolute top-0 left-0"></div>
@@ -297,6 +325,14 @@ const TextProcessor = () => {
                 <p className="text-slate-500 text-sm">This may take a few moments.</p>
               </div>
             </div>
+            <Button
+              onClick={handleCancelProcessing}
+              variant="outline"
+              className="w-full border-slate-300 hover:bg-slate-100 text-slate-700"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Cancel Processing
+            </Button>
           </Card>
         </div>
       )}
