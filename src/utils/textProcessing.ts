@@ -12,42 +12,10 @@ export const removeEmDashes = (text: string): string => {
     .trim();
 };
 
-export const addTypos = (text: string, typoLevel: number = 1): string => {
-  if (typoLevel <= 0) return text;
-
-  const words = text.split(' ');
-  // Adjust typoRate based on typoLevel. Max 10% at level 5.
-  const typoRate = Math.min(0.10, (typoLevel * 0.02)); 
-
-  const typoWords = words.map(word => {
-    if (Math.random() < typoRate && word.length > 4) {
-      const typoType = Math.random();
-      
-      if (typoType < 0.4) {
-        // Swap adjacent letters
-        const pos = Math.floor(Math.random() * (word.length - 1));
-        const chars = word.split('');
-        [chars[pos], chars[pos + 1]] = [chars[pos + 1], chars[pos]];
-        return chars.join('');
-      } else if (typoType < 0.7) {
-        // Remove a letter
-        const pos = Math.floor(Math.random() * word.length);
-        return word.slice(0, pos) + word.slice(pos + 1);
-      } else {
-        // Double a letter
-        const pos = Math.floor(Math.random() * word.length);
-        return word.slice(0, pos + 1) + word[pos] + word.slice(pos + 1);
-      }
-    }
-    return word;
-  });
-  
-  return typoWords.join(' ');
-};
-
 export type UseCase = 'academic' | 'professional' | 'casual' | 'social' | 'creative' | 'custom';
 
 export const getHumanizationPrompts = (useCase: UseCase, customPrompt?: string) => {
+  // This function is not directly used for AI prompting anymore but kept for potential future use or non-AI based text processing rules.
   const prompts = {
     academic: {
       name: 'Academic Paper',
@@ -147,61 +115,20 @@ export const getHumanizationPrompts = (useCase: UseCase, customPrompt?: string) 
   return prompts[useCase];
 };
 
-export const humanizeText = async (
+export const processText = async (
   text: string,
   useCase: UseCase = 'professional',
   customPrompt?: string,
   signal?: AbortSignal
 ): Promise<string> => {
-  console.log('Starting AI humanization with use case:', useCase);
+  console.log('Starting AI text processing with use case:', useCase, customPrompt ? `Custom: ${customPrompt}` : '');
   
   try {
-    const result = await aiService.humanizeText(text, useCase, customPrompt, signal);
-    console.log('AI humanization completed successfully');
+    const result = await aiService.processText(text, useCase, customPrompt, signal);
+    console.log('AI text processing completed successfully');
     return result;
   } catch (error) {
-    console.error('AI humanization failed:', error);
+    console.error('AI text processing failed:', error);
     throw error;
   }
-};
-
-export const rewriteWithAI = async (
-  text: string,
-  useCase: UseCase = 'professional',
-  customPrompt?: string,
-  signal?: AbortSignal
-): Promise<string> => {
-  console.log('Starting AI rewrite with use case:', useCase);
-  
-  try {
-    const result = await aiService.rewriteText(text, useCase, customPrompt, signal);
-    console.log('AI rewrite completed successfully');
-    return result;
-  } catch (error) {
-    console.error('AI rewrite failed:', error);
-    throw error;
-  }
-};
-
-// Apply transformations while preserving previous ones
-export const applyTransformations = (
-  originalText: string,
-  transformations: {
-    removeEmDashes?: boolean;
-    addTypos?: { level: number };
-    humanize?: { useCase: UseCase; customPrompt?: string };
-    aiRewrite?: { useCase: UseCase; customPrompt?: string };
-  }
-): string => {
-  let result = originalText;
-  
-  if (transformations.removeEmDashes) {
-    result = removeEmDashes(result);
-  }
-  
-  if (transformations.addTypos && transformations.addTypos.level > 0) {
-    result = addTypos(result, transformations.addTypos.level);
-  }
-  
-  return result;
 };

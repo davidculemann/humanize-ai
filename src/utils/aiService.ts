@@ -31,7 +31,7 @@ export class AIService {
     return this.apiKey;
   }
 
-  async humanizeText(
+  async processText(
     text: string,
     useCase: string,
     customPrompt?: string,
@@ -44,7 +44,7 @@ export class AIService {
       );
     }
 
-    const systemPrompt = this.buildSystemPrompt(useCase, customPrompt);
+    const systemPrompt = this.buildProcessPrompt(useCase, customPrompt);
     
     try {
       const response = await fetch(
@@ -64,10 +64,10 @@ export class AIService {
               },
               {
                 role: "user",
-                content: `Humanize the following text:\n\n${text}`,
+                content: `Transform the following text to sound genuinely human, natural, and engaging according to the specified style:\n\n${text}`,
               },
             ],
-            temperature: 0.7,
+            temperature: 0.75, // Slightly increased for more creative humanization
             max_tokens: 4000,
           }),
           signal,
@@ -91,116 +91,33 @@ export class AIService {
     }
   }
 
-  async rewriteText(
-    text: string,
-    useCase: string,
-    customPrompt?: string,
-    signal?: AbortSignal
-  ): Promise<string> {
-    const apiKey = this.getApiKey();
-    if (!apiKey) {
-      throw new Error(
-        "API key not set. Please configure the VITE_DEEPSEEK_API_KEY environment variable."
-      );
-    }
-
-    const systemPrompt = this.buildRewritePrompt(useCase, customPrompt);
-    
-    try {
-      const response = await fetch(
-        "https://api.deepseek.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model: "deepseek-chat",
-            messages: [
-              {
-                role: "system",
-                content: systemPrompt,
-              },
-              {
-                role: "user",
-                content: `Rewrite the following text:\n\n${text}`,
-              },
-            ],
-            temperature: 0.8,
-            max_tokens: 4000,
-          }),
-          signal,
-        }
-      );
-
-      if (signal?.aborted) {
-        throw new DOMException('Aborted by user', 'AbortError');
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
-      }
-
-      const data = await response.json();
-      return data.choices[0]?.message?.content || text;
-    } catch (error) {
-      console.error('AI Service Error:', error);
-      throw error;
-    }
-  }
-
-  private buildSystemPrompt(useCase: string, customPrompt?: string): string {
-    const basePrompt = `Your task is to humanize the provided text.
-REMOVE ALL PREAMBLE. REMOVE ALL INTRODUCTORY PHRASES. REMOVE ALL CLOSING REMARKS.
-Your response MUST be ONLY the humanized text and nothing else.
-Do NOT include any markdown formatting (e.g., do not use \`\`\` or backticks).
+  private buildProcessPrompt(useCase: string, customPrompt?: string): string {
+    const basePrompt = `Your task is to transform the provided text to sound genuinely human, natural, and engaging.
+This involves more than just superficial changes. You should significantly rewrite and restructure the text as needed to achieve a high-quality, human-like output.
 Focus on:
-1. Natural language, removing robotic patterns.
-2. Varied sentence structures.
-3. Conversational transitions.
-4. Eliminating artificial phrasing.
-5. Maintaining original meaning.
+1.  Natural Language: Eliminate robotic patterns, awkward phrasing, and overly formal/informal language inappropriate for the context.
+2.  Varied Sentence Structures: Create a mix of sentence lengths and complexities.
+3.  Flow and Cohesion: Ensure smooth transitions and logical connections between ideas.
+4.  Authentic Voice: The text should feel like it was written by a person, not an AI.
+5.  Clarity and Conciseness: Improve readability while preserving the original meaning.
+6.  Adherence to Style: Strictly follow the specified use case or custom instructions for tone and style.
+
+REMOVE ALL PREAMBLE. REMOVE ALL INTRODUCTORY PHRASES. REMOVE ALL CLOSING REMARKS.
+Your response MUST be ONLY the processed text and nothing else.
+Do NOT include any markdown formatting (e.g., do not use \`\`\` or backticks).
 
 OUTPUT ONLY THE PROCESSED TEXT.`;
 
-    const useCasePrompts = {
-      academic: 'Write in an academic style suitable for research papers and scholarly work, but make it sound like it was written by a human researcher rather than AI.',
-      professional: 'Write in a professional tone suitable for business documents, CVs, and corporate communications.',
-      casual: 'Write in a casual, conversational tone suitable for blog posts and articles.',
-      social: 'Write in a casual, engaging tone suitable for social media posts with natural personality.',
-      creative: 'Write with creative flair suitable for storytelling and creative content.',
-      custom: customPrompt || "Follow the user's custom instructions for tone and style."
+    const useCaseGuidance = {
+      academic: 'Adapt the text for an academic audience. Maintain a formal, objective tone suitable for research papers and scholarly articles. Ensure precise language and logical argumentation.',
+      professional: 'Adapt the text for a professional context. Use a clear, concise, and polished tone suitable for business documents, reports, CVs, and corporate communications.',
+      casual: 'Adapt the text for a casual, conversational style. Make it engaging and relatable, suitable for blog posts, articles, or informal communication.',
+      social: 'Adapt the text for social media. Make it engaging, concise, and personal, suitable for platforms like Twitter, Facebook, or LinkedIn. Use a natural, approachable voice.',
+      creative: 'Adapt the text with creative flair. Enhance its imaginative and expressive qualities, suitable for storytelling, marketing copy, or other creative content.',
+      custom: customPrompt || "Follow the user's custom instructions precisely to define the tone, style, and specific transformations required."
     };
 
-    return basePrompt + (useCasePrompts[useCase as keyof typeof useCasePrompts] || useCasePrompts.professional);
-  }
-
-  private buildRewritePrompt(useCase: string, customPrompt?: string): string {
-    const basePrompt = `Your task is to rewrite the provided text according to the specified use case.
-REMOVE ALL PREAMBLE. REMOVE ALL INTRODUCTORY PHRASES. REMOVE ALL CLOSING REMARKS.
-Your response MUST be ONLY the rewritten text and nothing else.
-Do NOT include any markdown formatting (e.g., do not use \`\`\` or backticks).
-Focus on:
-1. Preserving core meaning.
-2. Significantly changing structure and flow.
-3. Using different vocabulary.
-4. Sounding natural and human-written.
-5. Adapting tone for the use case.
-
-OUTPUT ONLY THE REWRITTEN TEXT.`;
-
-    const useCasePrompts = {
-      academic: 'Rewrite in an academic style with proper scholarly language and structure.',
-      professional: 'Rewrite in a professional business tone.',
-      casual: 'Rewrite in a casual, conversational style.',
-      social: 'Rewrite for social media with engaging, personal language.',
-      creative: 'Rewrite with creative and expressive language.',
-      custom: customPrompt || "Follow the user's custom instructions for rewriting."
-    };
-
-    return basePrompt + (useCasePrompts[useCase as keyof typeof useCasePrompts] || useCasePrompts.professional);
+    return basePrompt + '\n\nStyle Guidance:\n' + (useCaseGuidance[useCase as keyof typeof useCaseGuidance] || useCaseGuidance.professional);
   }
 }
 

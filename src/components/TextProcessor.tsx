@@ -8,12 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import {
-  applyTransformations,
-  humanizeText,
-  rewriteWithAI,
+  processText,
+  removeEmDashes,
   type UseCase
 } from '@/utils/textProcessing';
-import { Copy, Minus, Plus, Shuffle, Sparkles, Wand2, X } from 'lucide-react';
+import { Copy, Sparkles, Wand2, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 const TextProcessor = () => {
@@ -22,10 +21,6 @@ const TextProcessor = () => {
   const [useCase, setUseCase] = useState<UseCase>('professional');
   const [customPrompt, setCustomPrompt] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [appliedTransformations, setAppliedTransformations] = useState({
-    removeEmDashes: false,
-    addTypos: { level: 0 },
-  });
   const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -46,39 +41,18 @@ const TextProcessor = () => {
     }
   };
 
-  const handleTransformation = (type: 'removeEmDashes' | 'addTypos', value?: number | boolean) => {
-    const textToTransform = outputText.trim() ? outputText : inputText;
-    if (!textToTransform.trim()) return;
-
-    const newAppliedTransformations = { ...appliedTransformations };
-
-    if (type === 'removeEmDashes') {
-      newAppliedTransformations.removeEmDashes = !newAppliedTransformations.removeEmDashes;
-    } else if (type === 'addTypos') {
-      if (typeof value === 'number') {
-        newAppliedTransformations.addTypos = { level: value };
-      } else {
-        newAppliedTransformations.addTypos = { level: 0 };
-      }
-    }
-    
-    setAppliedTransformations(newAppliedTransformations);
-    
-    const result = applyTransformations(textToTransform, newAppliedTransformations);
-    setOutputText(result);
-  };
-
-  const handleHumanize = async () => {
+  const handleProcessText = async () => {
     if (!inputText.trim()) return;
     
     setIsProcessing(true);
     abortControllerRef.current = new AbortController();
     const { signal } = abortControllerRef.current;
+    const processedInput = removeEmDashes(inputText);
 
     try {
-      let result = await humanizeText(inputText, useCase, customPrompt, signal);
+      let result = await processText(processedInput, useCase, customPrompt, signal);
       if (signal.aborted) return;
-      result = applyTransformations(result, appliedTransformations);
+      result = removeEmDashes(result);
       
       setOutputText(result);
     } catch (error) {
@@ -86,47 +60,13 @@ const TextProcessor = () => {
       if (typedError.name === 'AbortError') {
         toast({
           title: "Processing Cancelled",
-          description: "The text processing was cancelled.",
+          description: "The text transformation was cancelled.",
         });
         setOutputText("");
       } else {
         toast({
           title: "Error",
-          description: typedError instanceof Error ? typedError.message : "Failed to humanize text. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setIsProcessing(false);
-      abortControllerRef.current = null;
-    }
-  };
-
-  const handleAIRewrite = async () => {
-    if (!inputText.trim()) return;
-    
-    setIsProcessing(true);
-    abortControllerRef.current = new AbortController();
-    const { signal } = abortControllerRef.current;
-
-    try {
-      let result = await rewriteWithAI(inputText, useCase, customPrompt, signal);
-      if (signal.aborted) return;
-      result = applyTransformations(result, appliedTransformations);
-      
-      setOutputText(result);
-    } catch (error) {
-      const typedError = error as Error | { name?: string; message?: string };
-      if (typedError.name === 'AbortError') {
-        toast({
-          title: "Processing Cancelled",
-          description: "The text rewriting was cancelled.",
-        });
-        setOutputText("");
-      } else {
-        toast({
-          title: "Error",
-          description: typedError instanceof Error ? typedError.message : "AI rewrite failed. Please try again.",
+          description: typedError instanceof Error ? typedError.message : "Failed to process text. Please try again.",
           variant: "destructive",
         });
       }
@@ -152,24 +92,26 @@ const TextProcessor = () => {
       <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-slate-50 to-blue-50/50 border-b border-slate-200/60">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <CardTitle className="text-2xl font-semibold text-slate-800 flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <CardTitle className="text-2xl font-semibold text-slate-800 flex items-center gap-3 shrink-0 whitespace-nowrap">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shrink-0">
                 <Wand2 className="w-4 h-4 text-white" />
               </div>
               Text Humanizer
             </CardTitle>
-            <ContentTypeSelector
-              useCase={useCase}
-              customPrompt={customPrompt}
-              onUseCaseChange={handleUseCaseChange}
-              isMobile={isMobile}
-            />
+            <div className="flex-shrink sm:flex-grow-0 sm:w-auto">
+              <ContentTypeSelector
+                useCase={useCase}
+                customPrompt={customPrompt}
+                onUseCaseChange={handleUseCaseChange}
+                isMobile={isMobile}
+              />
+            </div>
           </div>
         </CardHeader>
 
         <CardContent className="p-6 md:p-8">
           <div className="grid lg:grid-cols-2 gap-8">
-            <div className="space-y-4">
+            <div className="space-y-4 flex flex-col">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium text-slate-800">Original Text</h3>
                 <Badge variant="secondary" className="bg-slate-100 text-slate-600">
@@ -183,33 +125,19 @@ const TextProcessor = () => {
                 onChange={(e) => {
                   setInputText(e.target.value);
                   setOutputText("");
-                  setAppliedTransformations({ removeEmDashes: false, addTypos: { level: 0 } });
                 }}
-                className="min-h-[320px] resize-none border-slate-300 focus:border-blue-500 focus:ring-blue-500/30 text-slate-800 leading-relaxed text-base shadow-sm"
+                className="min-h-[320px] resize-none border-slate-300 focus:border-blue-500 focus:ring-blue-500/30 text-slate-800 leading-relaxed text-base shadow-sm flex-grow"
               />
 
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  onClick={handleAIRewrite}
-                  disabled={!inputText.trim() || isProcessing}
-                  className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/25 transition-all duration-150 ease-in-out hover:scale-[1.02] active:scale-[0.98]"
-                  size="lg"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  AI Rewrite
-                </Button>
-
-                <Button
-                  onClick={handleHumanize}
-                  disabled={!inputText.trim() || isProcessing}
-                  variant="outline"
-                  className="border-blue-300 hover:bg-blue-50 hover:border-blue-400 text-blue-600 shadow-sm transition-all duration-150 ease-in-out hover:scale-[1.02] active:scale-[0.98]"
-                  size="lg"
-                >
-                  <Shuffle className="w-4 h-4 mr-2" />
-                  Humanize
-                </Button>
-              </div>
+              <Button
+                onClick={handleProcessText} 
+                disabled={!inputText.trim() || isProcessing}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md hover:shadow-lg focus:ring-4 focus:ring-blue-300 focus:outline-none transition-colors duration-150 ease-in-out group"
+                size="lg"
+              >
+                <Sparkles className="w-5 h-5 mr-2 text-blue-100/90 group-hover:text-white transition-colors duration-150" />
+                Make it Human
+              </Button>
             </div>
 
             <div className="space-y-4">
@@ -232,7 +160,7 @@ const TextProcessor = () => {
                 </div>
               </div>
 
-              <div className="min-h-[320px] p-6 bg-gradient-to-br from-green-50/30 to-blue-50/20 rounded-xl border border-slate-200/80 overflow-y-auto shadow-inner inset-shadow-light scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
+              <div className="min-h-[320px] p-6 bg-gradient-to-br from-green-50/30 to-blue-50/20 rounded-xl border border-slate-200/80 overflow-y-auto shadow-inner inset-shadow-light scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100 h-0">
                 {outputText ? (
                   <p className="text-slate-800 leading-relaxed whitespace-pre-wrap text-base">{outputText}</p>
                 ) : (
@@ -258,57 +186,6 @@ const TextProcessor = () => {
               )}
             </div>
           </div>
-
-          {(inputText.trim() || outputText.trim()) && (
-            <div className="mt-8 pt-6 border-t border-slate-200/80">
-              <h4 className="text-base font-semibold text-slate-800 mb-4">Fine-tune Output</h4>
-              <div className="flex flex-wrap gap-3 items-center">
-                <Button
-                  onClick={() => handleTransformation("removeEmDashes")}
-                  variant="outline"
-                  size="sm"
-                  className={
-                    appliedTransformations.removeEmDashes
-                      ? "bg-green-100 border-green-300 text-green-700 hover:bg-green-200/70 shadow-sm"
-                      : "border-slate-300 hover:bg-slate-50 hover:border-slate-400 shadow-sm"
-                  }
-                >
-                  <Minus className="w-3 h-3 mr-2" />
-                  Remove Dashes
-                </Button>
-
-                <div className="flex items-center gap-2 px-2 py-1 rounded-md border border-slate-300 bg-white shadow-sm">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="!h-7 !w-7 text-slate-600 hover:bg-slate-100 rounded-md"
-                    onClick={() =>
-                      handleTransformation("addTypos", Math.max(0, appliedTransformations.addTypos.level - 1))
-                    }
-                    disabled={appliedTransformations.addTypos.level === 0}
-                    aria-label="Decrease typos"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
-                  <span className="text-sm font-medium text-slate-700 min-w-[50px] text-center select-none">
-                    {appliedTransformations.addTypos.level} Typos
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="!h-7 !w-7 text-slate-600 hover:bg-slate-100 rounded-md"
-                    onClick={() =>
-                      handleTransformation("addTypos", Math.min(5, appliedTransformations.addTypos.level + 1))
-                    }
-                    disabled={appliedTransformations.addTypos.level === 5}
-                    aria-label="Increase typos"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 

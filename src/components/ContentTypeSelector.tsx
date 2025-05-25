@@ -45,14 +45,14 @@ export default function ContentTypeSelector({
 
   const handleUseCaseSelect = (newUseCase: UseCase) => {
     if (newUseCase === "custom") {
-      onUseCaseChange("custom", customPrompt);
+      onUseCaseChange("custom", tempCustomPrompt);
     } else {
       onUseCaseChange(newUseCase);
     }
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="w-full sm:w-auto min-w-[160px] justify-between">
@@ -77,7 +77,7 @@ export default function ContentTypeSelector({
       </DropdownMenu>
 
       {useCase === "custom" && (
-        <div className="w-full sm:flex-grow mt-2 sm:mt-0">
+        <div className="w-full sm:w-auto mt-2 sm:mt-0">
           <Input
             type="text"
             placeholder="Describe your custom style..."
@@ -86,7 +86,7 @@ export default function ContentTypeSelector({
               setTempCustomPrompt(e.target.value);
               onUseCaseChange("custom", e.target.value);
             }}
-            className="w-full sm:w-[244px]"
+            className="w-full sm:w-[244px] md:min-w-[244px]"
           />
         </div>
       )}
