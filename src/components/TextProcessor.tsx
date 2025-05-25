@@ -4,16 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Copy, Sparkles, Minus, Shuffle, FileText, User, MessageSquare, Briefcase } from 'lucide-react';
+import { Copy, Sparkles, Minus, Shuffle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
+import ContentTypeSelector from '@/components/ContentTypeSelector';
 import { 
   humanizeText, 
   removeEmDashes, 
   addTypos, 
   rewriteWithAI,
   applyTransformations,
-  getHumanizationPrompts,
   type UseCase 
 } from '@/utils/textProcessing';
 
@@ -21,19 +21,14 @@ const TextProcessor = () => {
   const [inputText, setInputText] = useState('');
   const [outputText, setOutputText] = useState('');
   const [useCase, setUseCase] = useState<UseCase>('professional');
+  const [customPrompt, setCustomPrompt] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [appliedTransformations, setAppliedTransformations] = useState({
     removeEmDashes: false,
     addTypos: false,
   });
   const { toast } = useToast();
-
-  const useCaseIcons = {
-    academic: FileText,
-    professional: Briefcase,
-    casual: User,
-    social: MessageSquare,
-  };
+  const isMobile = useIsMobile();
 
   const handleCopy = async (text: string) => {
     try {
@@ -69,7 +64,7 @@ const TextProcessor = () => {
     
     setIsProcessing(true);
     try {
-      let result = await humanizeText(inputText, useCase);
+      let result = await humanizeText(inputText, useCase, customPrompt);
       
       // Apply any existing transformations
       result = applyTransformations(result, appliedTransformations);
@@ -91,7 +86,7 @@ const TextProcessor = () => {
     
     setIsProcessing(true);
     try {
-      let result = await rewriteWithAI(inputText, useCase);
+      let result = await rewriteWithAI(inputText, useCase, customPrompt);
       
       // Apply any existing transformations
       result = applyTransformations(result, appliedTransformations);
@@ -116,46 +111,30 @@ const TextProcessor = () => {
     setOutputText('');
   };
 
-  const currentPrompt = getHumanizationPrompts(useCase);
-  const UseCaseIcon = useCaseIcons[useCase];
+  const handleUseCaseChange = (newUseCase: UseCase, newCustomPrompt?: string) => {
+    setUseCase(newUseCase);
+    setCustomPrompt(newCustomPrompt || '');
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
-      {/* Use Case Selection */}
-      <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-            <UseCaseIcon className="w-5 h-5" />
-            Content Type
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Select value={useCase} onValueChange={(value: UseCase) => setUseCase(value)}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="academic">📚 Academic Paper</SelectItem>
-              <SelectItem value="professional">💼 Professional/CV</SelectItem>
-              <SelectItem value="casual">✍️ Blog/Article</SelectItem>
-              <SelectItem value="social">📱 Social Media</SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="text-sm text-slate-500 mt-2">
-            {currentPrompt.name} - Optimized for this content type
-          </p>
-        </CardContent>
-      </Card>
-
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Input Section */}
         <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl font-semibold text-slate-800">Original Text</CardTitle>
-              <Badge variant="outline" className="text-slate-500">
-                {inputText.length} chars
-              </Badge>
+              <div className="flex items-center gap-2">
+                <ContentTypeSelector
+                  useCase={useCase}
+                  customPrompt={customPrompt}
+                  onUseCaseChange={handleUseCaseChange}
+                  isMobile={isMobile}
+                />
+                <Badge variant="outline" className="text-slate-500">
+                  {inputText.length} chars
+                </Badge>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">

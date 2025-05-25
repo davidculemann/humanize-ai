@@ -40,9 +40,9 @@ export const addTypos = (text: string): string => {
   return typoWords.join(' ');
 };
 
-export type UseCase = 'academic' | 'professional' | 'casual' | 'social';
+export type UseCase = 'academic' | 'professional' | 'casual' | 'social' | 'creative' | 'technical' | 'custom';
 
-export const getHumanizationPrompts = (useCase: UseCase) => {
+export const getHumanizationPrompts = (useCase: UseCase, customPrompt?: string) => {
   const prompts = {
     academic: {
       name: 'Academic Paper',
@@ -93,22 +93,58 @@ export const getHumanizationPrompts = (useCase: UseCase) => {
         [/\butilize\b/gi, 'use'],
         [/\bfacilitate\b/gi, 'help'],
       ]
+    },
+    creative: {
+      name: 'Creative Writing',
+      replacements: [
+        [/\bFurthermore,?\s*/gi, 'Then '],
+        [/\bMoreover,?\s*/gi, 'What\'s more, '],
+        [/\bIn conclusion,?\s*/gi, 'Finally, '],
+        [/\bin order to\b/gi, 'to'],
+        [/\butilize\b/gi, 'use'],
+        [/\bdemonstrate\b/gi, 'show'],
+      ]
+    },
+    technical: {
+      name: 'Technical Documentation',
+      replacements: [
+        [/\bFurthermore,?\s*/gi, 'Additionally, '],
+        [/\bMoreover,?\s*/gi, 'Also, '],
+        [/\bIn conclusion,?\s*/gi, 'To summarize, '],
+        [/\bin order to\b/gi, 'to'],
+        [/\butilize\b/gi, 'use'],
+        [/\bfacilitate\b/gi, 'enable'],
+      ]
+    },
+    custom: {
+      name: customPrompt || 'Custom',
+      replacements: [
+        [/\bFurthermore,?\s*/gi, 'Also, '],
+        [/\bMoreover,?\s*/gi, 'Additionally, '],
+        [/\bIn conclusion,?\s*/gi, 'In summary, '],
+        [/\bin order to\b/gi, 'to'],
+        [/\butilize\b/gi, 'use'],
+      ]
     }
   };
   
   return prompts[useCase];
 };
 
-export const humanizeText = async (text: string, useCase: UseCase = 'professional'): Promise<string> => {
+export const humanizeText = async (text: string, useCase: UseCase = 'professional', customPrompt?: string): Promise<string> => {
   // Simulate AI processing
   await new Promise(resolve => setTimeout(resolve, 1500));
   
   let humanized = text;
-  const prompts = getHumanizationPrompts(useCase);
+  const prompts = getHumanizationPrompts(useCase, customPrompt);
   
   // Apply use-case specific replacements
   prompts.replacements.forEach(([pattern, replacement]) => {
-    humanized = humanized.replace(pattern, replacement);
+    if (typeof pattern === 'string') {
+      humanized = humanized.replace(new RegExp(pattern, 'gi'), replacement as string);
+    } else {
+      humanized = humanized.replace(pattern, replacement as string);
+    }
   });
   
   // Common improvements for all use cases
@@ -120,14 +156,14 @@ export const humanizeText = async (text: string, useCase: UseCase = 'professiona
   return humanized;
 };
 
-export const rewriteWithAI = async (text: string, useCase: UseCase = 'professional'): Promise<string> => {
+export const rewriteWithAI = async (text: string, useCase: UseCase = 'professional', customPrompt?: string): Promise<string> => {
   // Simulate AI rewriting
   await new Promise(resolve => setTimeout(resolve, 2000));
   
   let rewritten = text;
   
   // Apply humanization first
-  rewritten = await humanizeText(rewritten, useCase);
+  rewritten = await humanizeText(rewritten, useCase, customPrompt);
   
   // Add some variation based on use case
   if (useCase === 'social') {
@@ -145,8 +181,8 @@ export const applyTransformations = (
   transformations: {
     removeEmDashes?: boolean;
     addTypos?: boolean;
-    humanize?: { useCase: UseCase };
-    aiRewrite?: { useCase: UseCase };
+    humanize?: { useCase: UseCase; customPrompt?: string };
+    aiRewrite?: { useCase: UseCase; customPrompt?: string };
   }
 ): string => {
   let result = originalText;
